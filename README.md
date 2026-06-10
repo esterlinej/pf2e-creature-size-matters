@@ -192,11 +192,11 @@ When a qualifying hit occurs, a card appears showing:
 
 ## Compatibility
 
-| | Version |
-|--|---------|
-| Foundry VTT | 13+ |
-| PF2e System | 6.0.0+ |
-| Verified | Foundry 14, PF2e 7.12 |
+| | Version                     |
+|--|-----------------------------|
+| Foundry VTT | 13+                         |
+| PF2e System | 6.0.0+                      |
+| Verified | Foundry 13.351, PF2e 7.12.2 |
 
 ---
 
