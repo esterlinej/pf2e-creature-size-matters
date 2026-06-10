@@ -20,6 +20,7 @@ module posts a GM-only card to chat that:
 - Requires the target to make a **Reflex save** or suffer a condition
 - Provides **draggable condition links** to apply directly to the token on a failed save
 - Automatically **doubles bonus damage** on a critical hit (configurable)
+- Posts an **inline save check** to public chat for players to roll themselves
 
 ## Size Categories
 
@@ -51,39 +52,42 @@ Size Matters**.
 The flat bonus damage applied per size category difference when no tier override 
 is set.
 
-- 1 category difference → +5 damage
-- 2 category difference → +10 damage  
-- 3 category difference → +15 damage
+- 1 category difference → 5 × 1 = **5** damage
+- 2 category difference → 5 × 2 = **10** damage
+- 3 category difference → 5 × 3 = **15** damage
 
-#### Override: 1 Category Damage
+#### Override: Per-Category Damage at 1 Category
 **Default: 0 (disabled)**
 
-Set a specific bonus damage value for exactly 1 size category difference, 
-overriding the base calculation. Leave at **0** to use the base value.
+Replaces the base damage per category for exactly 1 size category difference.
+Multiplied by 1. Leave at **0** to use the base value.
 
-#### Override: 2 Category Damage
+#### Override: Per-Category Damage at 2 Categories
 **Default: 0 (disabled)**
 
-Set a specific bonus damage value for exactly 2 size category difference. 
-Leave at **0** to use the base value.
+Replaces the base damage per category for exactly 2 size category difference.
+Multiplied by 2. Leave at **0** to use the base value.
 
-#### Override: 3+ Category Damage
+#### Override: Per-Category Damage at 3+ Categories
 **Default: 0 (disabled)**
 
-Set a specific bonus damage value for 3 or more size category differences. 
-Leave at **0** to use the base value.
+Replaces the base damage per category for 3 or more size category differentials.
+Multiplied by the actual size difference. Leave at **0** to use the base value.
 
-**Example:** Base damage is 5 per category. You want 1 category = +5, 
-2 categories = +15, 3+ categories = +30:
-- Base Damage Per Category: `5`
-- Override Tier 1: `0` (uses base: 5 × 1 = 5)
-- Override Tier 2: `15`
-- Override Tier 3: `30`
+**Example with overrides set to 8, 10, 12:**
+
+| Attacker | Target | Categories | Calculation | Bonus Damage |
+|----------|--------|------------|-------------|--------------|
+| Large | Medium | 1 | 8 × 1 | **8** |
+| Large | Small | 2 | 10 × 2 | **20** |
+| Huge | Small | 3 | 12 × 3 | **36** |
+| Gargantuan | Small | 4 | 12 × 4 | **48** |
+| Gargantuan | Tiny | 5 | 12 × 5 | **60** |
 
 #### Double Bonus Damage on Critical Hit
 **Default: Enabled**
 
-When **enabled** — bonus damage is automatically doubled on a critical hit. 
+When **enabled** — bonus damage is automatically doubled on a critical hit.
 A single apply button appears showing the doubled value.
 
 When **disabled** — on a critical hit, two buttons appear in the card:
@@ -108,14 +112,17 @@ Added to the Base DC per size category difference.
 
 Formula: `Base DC + (DC Modifier × size difference)`
 
-- Default with 1 category: DC 10 + 5 = **DC 15**
-- Default with 2 categories: DC 10 + 10 = **DC 20**
-- Default with 3 categories: DC 10 + 15 = **DC 25**
+| Categories | Default Calculation | DC |
+|------------|--------------------|----|
+| 1 | 10 + (5 × 1) | **15** |
+| 2 | 10 + (5 × 2) | **20** |
+| 3 | 10 + (5 × 3) | **25** |
+| 4 | 10 + (5 × 4) | **30** |
 
 #### Condition: 1 Category Difference
 **Default: Off-Guard**
 
-The condition applied to the target on a failed Reflex save when the attacker 
+The condition applied to the target on a failed Reflex save when the attacker
 is 1 size category larger.
 
 | Option | Effect |
@@ -127,7 +134,7 @@ is 1 size category larger.
 #### Condition: 2+ Category Difference
 **Default: Prone**
 
-The condition applied to the target on a failed Reflex save when the attacker 
+The condition applied to the target on a failed Reflex save when the attacker
 is 2 or more size categories larger.
 
 | Option | Effect |
@@ -136,8 +143,26 @@ is 2 or more size categories larger.
 | Off-Guard | Target loses their Dexterity bonus to AC |
 | None | No condition — damage prompt only |
 
-The condition appears as a **draggable link** in the chat card — drag it directly 
+The condition appears as a **draggable link** in the GM card — drag it directly
 onto the target token to apply after a failed save.
+
+---
+
+### Save Roll Mode
+**Default: Post to Chat**
+
+Controls how the Reflex save is handled when the save button is clicked or 
+auto-roll is enabled.
+
+| Option | Behavior |
+|--------|----------|
+| **Post to Chat** *(default)* | Posts an inline Reflex save check to **public chat**. Players click it and roll themselves with all their own bonuses applied. |
+| **GM Rolls** | GM rolls the save against the target actor directly from the server side. |
+| **Both** | Both buttons appear on the GM card — Post to Chat and GM Roll independently. |
+
+**Post to Chat** is the recommended default — players roll with their own 
+character's bonuses, feats, and items properly applied. The save appears 
+publicly in chat and is preserved in the session log.
 
 ---
 
@@ -157,11 +182,15 @@ Controls how bonus damage is applied.
 #### Auto Roll Reflex Save
 **Default: Disabled**
 
-When **enabled** — the target's Reflex save is automatically rolled against the 
-calculated DC the moment a qualifying hit occurs. No button appears in the card.
+When **enabled** — the save is automatically triggered the moment a qualifying
+hit occurs, using the **Save Roll Mode** setting to determine how:
 
-When **disabled** — a **🎲 Roll Reflex Save DC X** button appears in the card. 
-Click to trigger the PF2e save roller for the target.
+- **Post to Chat** — automatically posts the inline check to public chat
+- **GM Rolls** — automatically rolls the target's save server-side
+- **Both** — does both automatically
+
+When **disabled** — the appropriate button(s) appear on the GM card for manual 
+triggering.
 
 ---
 
@@ -170,49 +199,64 @@ Click to trigger the PF2e save roller for the target.
 #### Whisper to GM Only
 **Default: Enabled**
 
-When **enabled** — the size differential card is only visible to the GM.
+When **enabled** — the size differential GM card is only visible to the GM.
 
-When **disabled** — the card is visible to all players at the table.
+When **disabled** — the card is visible to all players.
+
+> **Note:** Save posts to chat via **Post to Chat** mode are always public 
+> regardless of this setting.
 
 ---
 
 ## The Chat Card
 
-When a qualifying hit occurs, a card appears showing:
+When a qualifying hit occurs, a GM card appears showing:
 
 - **Attacker and target** with their size categories
-- **Size difference** in categories
+- **Size difference** in categories  
 - **Bonus damage** to apply (doubled automatically on crits if enabled)
 - **Reflex DC** and the condition on a failed save
 - A draggable **condition link** — drag onto the token after a failed save
 - An **Apply Damage** button (if set to Button mode)
-- A **Roll Save** button (if auto-roll is disabled)
+- A **Post Save** and/or **GM Roll Save** button (based on Save Roll Mode)
 
 ---
 
 ## Compatibility
 
-| | Version                     |
-|--|-----------------------------|
-| Foundry VTT | 13+                         |
-| PF2e System | 6.0.0+                      |
-| Verified | Foundry 13.351, PF2e 7.12.2 |
+| | Version |
+|--|---------|
+| Foundry VTT | 13+ |
+| PF2e System | 6.0.0+ |
+| Verified | Foundry 13.347, PF2e 7.12.2 |
 
 ---
 
 ## Design Notes
 
-This module is intentionally **GM-facing** by default. The intent is to add 
-narrative and tactical weight to size differentials without overwhelming players 
-with additional mechanics they need to track. The GM sees the prompt, applies 
+This module is intentionally **GM-facing** by default. The intent is to add
+narrative and tactical weight to size differentials without overwhelming players
+with additional mechanics they need to track. The GM sees the prompt, applies
 the damage, calls for the save, and narrates the result.
 
-Size differential only applies to **melee attacks**. Ranged attacks, spells, 
+Size differential only applies to **melee attacks**. Ranged attacks, spells,
 and abilities are not affected.
 
-Bonus damage bypasses IWR (Immunity, Weakness, Resistance) when applied via 
-the button — it is treated as a direct HP reduction. GMs should account for 
+Bonus damage bypasses IWR (Immunity, Weakness, Resistance) when applied via
+the button — it is treated as a direct HP reduction. GMs should account for
 relevant resistances or immunities manually if needed.
+
+---
+
+## Changelog
+
+### v1.1.0
+- **New:** Save Roll Mode setting — Post to Chat, GM Rolls, or Both
+- **New:** Post to Chat posts a public inline Reflex save check players roll themselves
+- **Fix:** Per-category tier overrides now correctly multiply by the actual size differential
+
+### v1.0.0
+- Initial release
 
 ---
 
