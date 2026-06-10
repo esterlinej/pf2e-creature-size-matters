@@ -46,6 +46,10 @@ Size Matters**.
 
 ### Damage Settings
 
+<p align="center">
+  <img src="assets/images/settings-damage.png" alt="Damage Settings" width="600"/>
+</p>
+
 #### Base Damage Per Size Category
 **Default: 5**
 
@@ -149,6 +153,10 @@ onto the target token to apply after a failed save.
 ---
 
 ### Save Roll Mode
+<p align="center">
+  <img src="assets/images/settings-save-dc-and-chat.png" alt="Save DC and Chat Settings" width="600"/>
+</p>
+
 **Default: Post to Chat**
 
 Controls how the Reflex save is handled when the save button is clicked or 
@@ -213,12 +221,27 @@ When **disabled** — the card is visible to all players.
 When a qualifying hit occurs, a GM card appears showing:
 
 - **Attacker and target** with their size categories
-- **Size difference** in categories  
+- **Size difference** in categories
 - **Bonus damage** to apply (doubled automatically on crits if enabled)
 - **Reflex DC** and the condition on a failed save
 - A draggable **condition link** — drag onto the token after a failed save
 - An **Apply Damage** button (if set to Button mode)
 - A **Post Save** and/or **GM Roll Save** button (based on Save Roll Mode)
+
+<table>
+  <tr>
+    <th align="center">Normal Hit</th>
+    <th align="center">Critical Hit</th>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="assets/images/chat-normal-hit.png" alt="Chat Card - Normal Hit" width="280"/>
+    </td>
+    <td align="center">
+      <img src="assets/images/chat-critical-hit.png" alt="Chat Card - Critical Hit" width="280"/>
+    </td>
+  </tr>
+</table>
 
 ---
 
