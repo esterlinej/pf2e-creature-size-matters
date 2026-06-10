@@ -36,20 +36,20 @@ Hooks.once('init', () => {
     });
 
     game.settings.register(MODULE_ID, 'damageTier1', {
-        name: 'Override: 1 Category Damage',
-        hint: 'Leave at 0 to use base damage per category.',
+        name: 'Override: Per-Category Damage at 1 Category',
+        hint: 'Replaces base damage per category for exactly 1 category differential. Multiplied by 1. Leave at 0 to use base.',
         scope: 'world', config: true, type: Number, default: 0
     });
 
     game.settings.register(MODULE_ID, 'damageTier2', {
-        name: 'Override: 2 Category Damage',
-        hint: 'Leave at 0 to use base damage per category.',
+        name: 'Override: Per-Category Damage at 2 Categories',
+        hint: 'Replaces base damage per category for exactly 2 category differential. Multiplied by 2. Leave at 0 to use base.',
         scope: 'world', config: true, type: Number, default: 0
     });
 
     game.settings.register(MODULE_ID, 'damageTier3', {
-        name: 'Override: 3+ Category Damage',
-        hint: 'Leave at 0 to use base damage per category.',
+        name: 'Override: Per-Category Damage at 3+ Categories',
+        hint: 'Replaces base damage per category for 3 or more category differentials. Multiplied by actual difference. Leave at 0 to use base.',
         scope: 'world', config: true, type: Number, default: 0
     });
 
@@ -97,6 +97,18 @@ Hooks.once('init', () => {
         default: 'prone'
     });
 
+    game.settings.register(MODULE_ID, 'saveRollMode', {
+        name: 'Save Roll Mode',
+        hint: 'Post to Chat: posts an inline check players can roll themselves with their own bonuses (recommended). GM Rolls: GM rolls against the target actor directly. Both: show both buttons.',
+        scope: 'world', config: true, type: String,
+        choices: {
+            'post':   'Post to Chat',
+            'gm':     'GM Rolls',
+            'both':   'Both'
+        },
+        default: 'post'
+    });
+
     // ── Automation ──────────────────────────────────────────────────────────
 
     game.settings.register(MODULE_ID, 'autoApplyDamage', {
@@ -113,7 +125,7 @@ Hooks.once('init', () => {
 
     game.settings.register(MODULE_ID, 'autoRollSave', {
         name: 'Auto Roll Reflex Save',
-        hint: 'Automatically rolls the target\'s Reflex save when a size differential hit occurs.',
+        hint: 'Automatically triggers the save when a size differential hit occurs. Uses the Save Roll Mode setting to determine how.',
         scope: 'world', config: true, type: Boolean, default: false
     });
 
@@ -121,7 +133,7 @@ Hooks.once('init', () => {
 
     game.settings.register(MODULE_ID, 'whisperGM', {
         name: 'Whisper to GM Only',
-        hint: 'If enabled, the size differential card is only visible to the GM.',
+        hint: 'If enabled, the size differential card is only visible to the GM. Save posts to chat are always public.',
         scope: 'world', config: true, type: Boolean, default: true
     });
 
@@ -142,9 +154,9 @@ function getBonusDamage(diff) {
     const tier2 = game.settings.get(MODULE_ID, 'damageTier2');
     const tier3 = game.settings.get(MODULE_ID, 'damageTier3');
 
-    if (diff >= 3 && tier3 > 0) return tier3;
-    if (diff === 2 && tier2 > 0) return tier2;
-    if (diff === 1 && tier1 > 0) return tier1;
+    if (diff >= 3 && tier3 > 0) return tier3 * diff;
+    if (diff === 2 && tier2 > 0) return tier2 * diff;
+    if (diff === 1 && tier1 > 0) return tier1 * diff;
     return base * diff;
 }
 
@@ -199,7 +211,7 @@ async function applyBonusDamage(targetUuid, damage) {
     return true;
 }
 
-// ─── Roll Save Helper ─────────────────────────────────────────────────────────
+// ─── Roll Save Helper (GM side) ───────────────────────────────────────────────
 
 async function rollReflexSave(targetUuid, reflexDC, conditionLabel) {
     const resolved = await fromUuid(targetUuid);
@@ -222,6 +234,43 @@ async function rollReflexSave(targetUuid, reflexDC, conditionLabel) {
     return true;
 }
 
+// ─── Post Save to Chat Helper ─────────────────────────────────────────────────
+
+async function postSaveToChat(targetActor, reflexDC, conditionLabel) {
+    await ChatMessage.create({
+        content: `<p><strong>${targetActor.name}</strong> must succeed at a @Check[reflex|dc:${reflexDC}]{Reflex Save} or become <strong>${conditionLabel}</strong>.</p>`,
+        speaker: { alias: 'Size Rules' }
+    });
+    return true;
+}
+
+// ─── Build Save Buttons ───────────────────────────────────────────────────────
+
+function buildSaveButtons(targetUuid, reflexDC, conditionLabel, saveRollMode, autoRoll) {
+    if (autoRoll) return ''; // auto handled separately
+
+    const postButton = `
+        <button class="size-post-save"
+            data-target-uuid="${targetUuid}"
+            data-dc="${reflexDC}"
+            data-condition="${conditionLabel}">
+            📢 Post Reflex Save DC ${reflexDC}
+        </button>`;
+
+    const gmButton = `
+        <button class="size-roll-save"
+            data-target-uuid="${targetUuid}"
+            data-dc="${reflexDC}"
+            data-condition="${conditionLabel}">
+            🎲 GM Roll Reflex Save DC ${reflexDC}
+        </button>`;
+
+    if (saveRollMode === 'post') return postButton;
+    if (saveRollMode === 'gm')   return gmButton;
+    if (saveRollMode === 'both') return postButton + gmButton;
+    return postButton; // fallback to post
+}
+
 // ─── Build Apply Buttons ──────────────────────────────────────────────────────
 
 function buildApplyButtons(targetUuid, bonusDamage, isCrit, autoApply, critMultiplierEnabled) {
@@ -234,7 +283,6 @@ function buildApplyButtons(targetUuid, bonusDamage, isCrit, autoApply, critMulti
 
     if (autoApply !== 'button') return ''; // 'auto' handled separately
 
-    // Single button — auto-doubled if crit + setting enabled
     if (!isCrit || critMultiplierEnabled) {
         const displayDamage = isCrit && critMultiplierEnabled
             ? bonusDamage * 2
@@ -248,7 +296,6 @@ function buildApplyButtons(targetUuid, bonusDamage, isCrit, autoApply, critMulti
             </button>`;
     }
 
-    // Crit but setting disabled — show two buttons
     const critDamage = bonusDamage * 2;
     return `
         <button class="size-apply-damage"
@@ -276,10 +323,10 @@ async function postSizeDifferentialMessage(attackerActor, targetActor, diff, out
     const autoApply             = game.settings.get(MODULE_ID, 'autoApplyDamage');
     const whisperGM             = game.settings.get(MODULE_ID, 'whisperGM');
     const autoRoll              = game.settings.get(MODULE_ID, 'autoRollSave');
+    const saveRollMode          = game.settings.get(MODULE_ID, 'saveRollMode');
     const critMultiplierEnabled = game.settings.get(MODULE_ID, 'criticalMultiplier');
     const isCrit                = outcome === 'criticalSuccess';
 
-    // Display damage in card
     const displayDamage = isCrit && critMultiplierEnabled
         ? bonusDamage * 2
         : bonusDamage;
@@ -293,14 +340,9 @@ async function postSizeDifferentialMessage(attackerActor, targetActor, diff, out
         targetActor.uuid, bonusDamage, isCrit, autoApply, critMultiplierEnabled
     );
 
-    const saveButton = !autoRoll
-        ? `<button class="size-roll-save"
-               data-target-uuid="${targetActor.uuid}"
-               data-dc="${reflexDC}"
-               data-condition="${conditionLabel}">
-               🎲 Roll Reflex Save DC ${reflexDC}
-           </button>`
-        : '';
+    const saveButtons = buildSaveButtons(
+        targetActor.uuid, reflexDC, conditionLabel, saveRollMode, autoRoll
+    );
 
     const content = `
         <div class="pf2e chat-card action-card">
@@ -323,7 +365,7 @@ async function postSizeDifferentialMessage(attackerActor, targetActor, diff, out
                 </p>
                 <div class="size-buttons flexcol" style="gap:4px; margin-top:8px;">
                     ${applyButtons}
-                    ${saveButton}
+                    ${saveButtons}
                 </div>
             </div>
         </div>
@@ -342,9 +384,14 @@ async function postSizeDifferentialMessage(attackerActor, targetActor, diff, out
         await applyBonusDamage(targetActor.uuid, displayDamage);
     }
 
-    // Auto roll save
+    // Auto save — respects saveRollMode
     if (autoRoll) {
-        await rollReflexSave(targetActor.uuid, reflexDC, conditionLabel);
+        if (saveRollMode === 'post' || saveRollMode === 'both') {
+            await postSaveToChat(targetActor, reflexDC, conditionLabel);
+        }
+        if (saveRollMode === 'gm' || saveRollMode === 'both') {
+            await rollReflexSave(targetActor.uuid, reflexDC, conditionLabel);
+        }
     }
 }
 
@@ -368,7 +415,34 @@ Hooks.on('renderChatMessage', (message, html) => {
         }
     });
 
-    // Roll save button
+    // Post save to chat button
+    html.find('.size-post-save').on('click', async (event) => {
+        if (!game.user.isGM) return;
+        const btn        = event.currentTarget;
+        const targetUuid = btn.dataset.targetUuid;
+        const dc         = parseInt(btn.dataset.dc);
+        const condition  = btn.dataset.condition;
+
+        console.log(`${MODULE_ID} | Post save clicked — UUID: ${targetUuid}, DC: ${dc}, Condition: ${condition}`);
+
+        const resolved = await fromUuid(targetUuid);
+        const actor = resolved?.actor ?? resolved;
+
+        console.log(`${MODULE_ID} | Resolved actor:`, actor?.name);
+
+        if (!actor) {
+            ui.notifications.warn('Size Matters: Could not find target actor.');
+            return;
+        }
+
+        const success = await postSaveToChat(actor, dc, condition);
+        if (success) {
+            btn.disabled    = true;
+            btn.textContent = '✅ Save Posted';
+        }
+    });
+
+    // GM roll save button
     html.find('.size-roll-save').on('click', async (event) => {
         if (!game.user.isGM) return;
         const btn        = event.currentTarget;

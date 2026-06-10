@@ -2,7 +2,7 @@
   "id": "pf2e-creature-size-matters",
   "title": "PF2e Creature Size Matters",
   "description": "Adds size differential damage bonus and save prompts when larger creatures strike smaller ones.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "compatibility": {
     "minimum": "13",
     "verified": "13"
@@ -18,7 +18,7 @@
     "scripts/size-differential.mjs"
   ],
   "manifest": "https://raw.githubusercontent.com/esterlinej/pf2e-creature-size-matters/main/module.json",
-  "download": "https://github.com/esterlinej/pf2e-creature-size-matters/archive/refs/tags/v1.0.0.zip",
+  "download": "https://github.com/esterlinej/pf2e-creature-size-matters/archive/refs/tags/v1.1.0.zip",
   "languages": [
     {
       "lang": "en",
