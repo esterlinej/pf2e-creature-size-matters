@@ -1,0 +1,14 @@
+{
+  "pf2e-size-differential": {
+    "settings": {
+      "bonusPerSize": {
+        "name": "Bonus Damage Per Size Category",
+        "hint": "Flat damage bonus applied per size category difference"
+      },
+      "dcPerSize": {
+        "name": "Reflex DC Per Size Category",
+        "hint": "Added to base DC 10 per size category difference"
+      }
+    }
+  }
+}

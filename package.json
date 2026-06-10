@@ -1,0 +1,24 @@
+{
+  "name": "pf2e-creature-size-matters",
+  "version": "1.0.0",
+  "description": "Foundry VTT Module for Pathfinder 2e",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/esterlinej/pf2e-creature-size-matters.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/esterlinej/pf2e-creature-size-matters/issues"
+  },
+  "homepage": "https://github.com/esterlinej/pf2e-creature-size-matters#readme",
+  "devDependencies": {
+    "@league-of-foundry-developers/foundry-vtt-types": "^13.346.0-beta.20250812191140"
+  }
+}
