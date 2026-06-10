@@ -17,6 +17,8 @@
   "esmodules": [
     "scripts/size-differential.mjs"
   ],
+  "manifest": "https://raw.githubusercontent.com/esterlinej/pf2e-creature-size-matters/main/module.json",
+  "download": "https://github.com/esterlinej/pf2e-creature-size-matters/archive/refs/tags/v1.0.0.zip",
   "languages": [
     {
       "lang": "en",
