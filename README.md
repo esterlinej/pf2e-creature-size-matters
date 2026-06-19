@@ -1,18 +1,18 @@
 # PF2e Creature Size Matters
 
-A Foundry VTT module for **Pathfinder 2e** that adds meaningful mechanical weight 
+A Foundry VTT module for **Pathfinder 2e** that adds meaningful mechanical weight
 to size differentials in melee combat.
 
 ## The Problem
 
-PF2e normalizes damage across creature sizes — a Huge giant hitting a Medium 
-adventurer deals damage appropriate to the level differential, not the *size* 
-differential. The terror of fighting something three times your size has no 
+PF2e normalizes damage across creature sizes — a Huge giant hitting a Medium
+adventurer deals damage appropriate to the level differential, not the *size*
+differential. The terror of fighting something three times your size has no
 mechanical expression. This module fixes that.
 
 ## What It Does
 
-When a larger creature successfully hits a smaller one in **melee combat**, the 
+When a larger creature successfully hits a smaller one in **melee combat**, the
 module posts a GM-only card to chat that:
 
 - Calculates the size category difference between attacker and target
@@ -39,7 +39,7 @@ A Large creature (3) striking a Small creature (1) has a **2 category differenti
 
 ## Configuration
 
-All settings are found under **Game Settings → Module Settings → PF2e Creature 
+All settings are found under **Game Settings → Module Settings → PF2e Creature
 Size Matters**.
 
 ---
@@ -53,7 +53,7 @@ Size Matters**.
 #### Base Damage Per Size Category
 **Default: 5**
 
-The flat bonus damage applied per size category difference when no tier override 
+The flat bonus damage applied per size category difference when no tier override
 is set.
 
 - 1 category difference → 5 × 1 = **5** damage
@@ -159,7 +159,7 @@ onto the target token to apply after a failed save.
 
 **Default: Post to Chat**
 
-Controls how the Reflex save is handled when the save button is clicked or 
+Controls how the Reflex save is handled when the save button is clicked or
 auto-roll is enabled.
 
 | Option | Behavior |
@@ -168,8 +168,8 @@ auto-roll is enabled.
 | **GM Rolls** | GM rolls the save against the target actor directly from the server side. |
 | **Both** | Both buttons appear on the GM card — Post to Chat and GM Roll independently. |
 
-**Post to Chat** is the recommended default — players roll with their own 
-character's bonuses, feats, and items properly applied. The save appears 
+**Post to Chat** is the recommended default — players roll with their own
+character's bonuses, feats, and items properly applied. The save appears
 publicly in chat and is preserved in the session log.
 
 ---
@@ -197,7 +197,7 @@ hit occurs, using the **Save Roll Mode** setting to determine how:
 - **GM Rolls** — automatically rolls the target's save server-side
 - **Both** — does both automatically
 
-When **disabled** — the appropriate button(s) appear on the GM card for manual 
+When **disabled** — the appropriate button(s) appear on the GM card for manual
 triggering.
 
 ---
@@ -211,8 +211,37 @@ When **enabled** — the size differential GM card is only visible to the GM.
 
 When **disabled** — the card is visible to all players.
 
-> **Note:** Save posts to chat via **Post to Chat** mode are always public 
+> **Note:** Save posts to chat via **Post to Chat** mode are always public
 > regardless of this setting.
+
+---
+
+### Player Friendliness
+
+#### Treat Small Player Characters as Medium
+**Default: Enabled**
+
+A softer option for tables that don't want size category to penalize a
+player's choice of ancestry. When **enabled**, Small **player characters**
+(gnomes, goblins, halflings, etc.) are treated as Medium for the purposes of
+this module's size-differential calculations — both when they're the target
+of an attack and when they're the one attacking.
+
+This is intentionally one rule applied symmetrically: a Small PC neither
+takes bonus damage for being smaller than a Medium+ attacker, nor deals
+bonus damage for being smaller than a Medium+ target. It simply removes
+size from the equation for that PC, in both directions.
+
+When **disabled**, Small PCs are treated exactly like any other Small
+creature for all calculations.
+
+> **Note:** This setting only affects **player characters** (actors of type
+> `character`). Small NPCs and monsters are unaffected and still use their
+> true size category.
+
+The GM card reflects the normalization when it applies — a Small PC's size
+label will show as `Small → Medium` so the GM can see at a glance why the
+differential resolved the way it did.
 
 ---
 
@@ -272,6 +301,11 @@ relevant resistances or immunities manually if needed.
 ---
 
 ## Changelog
+
+### v1.2.0
+- **New:** Treat Small Player Characters as Medium setting — softer option so
+  players aren't penalized (or favored) for choosing a Small ancestry in
+  size-differential calculations. Defaults to enabled. PCs only.
 
 ### v1.1.0
 - **New:** Save Roll Mode setting — Post to Chat, GM Rolls, or Both
