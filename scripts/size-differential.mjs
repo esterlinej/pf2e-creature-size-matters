@@ -137,10 +137,27 @@ Hooks.once('init', () => {
         scope: 'world', config: true, type: Boolean, default: true
     });
 
+    // ── Player Friendliness ────────────────────────────────────────────────
+
+    game.settings.register(MODULE_ID, 'treatSmallPCsAsMedium', {
+        name: 'Treat Small Player Characters as Medium',
+        hint: 'A softer option. When enabled, Small player characters are treated as Medium size for all size-differential calculations (both attacking and defending), so players are not penalized — or favored — for choosing a Small ancestry. Does not affect Small NPCs.',
+        scope: 'world', config: true, type: Boolean, default: true
+    });
+
     console.log(`${MODULE_ID} | Initialized`);
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getEffectiveSize(actor) {
+    const rawSize = actor.size;
+    const isSmallPC = rawSize === 'sm' && actor.type === 'character';
+    const treatAsMedium = game.settings.get(MODULE_ID, 'treatSmallPCsAsMedium');
+
+    if (isSmallPC && treatAsMedium) return 'med';
+    return rawSize;
+}
 
 function getSizeDifferential(attackerSize, targetSize) {
     const atk = SIZE_MAP[attackerSize] ?? 2;
@@ -320,6 +337,10 @@ async function postSizeDifferentialMessage(attackerActor, targetActor, diff, out
     const conditionLink         = await buildConditionLink(conditionKey);
     const atkSize               = SIZE_LABELS[attackerActor.size] ?? attackerActor.size;
     const tgtSize               = SIZE_LABELS[targetActor.size]   ?? targetActor.size;
+    const atkNormalized         = getEffectiveSize(attackerActor) !== attackerActor.size;
+    const tgtNormalized         = getEffectiveSize(targetActor)   !== targetActor.size;
+    const atkSizeDisplay        = atkNormalized ? `${atkSize} → Medium` : atkSize;
+    const tgtSizeDisplay        = tgtNormalized ? `${tgtSize} → Medium` : tgtSize;
     const autoApply             = game.settings.get(MODULE_ID, 'autoApplyDamage');
     const whisperGM             = game.settings.get(MODULE_ID, 'whisperGM');
     const autoRoll              = game.settings.get(MODULE_ID, 'autoRollSave');
@@ -352,9 +373,9 @@ async function postSizeDifferentialMessage(attackerActor, targetActor, diff, out
             </header>
             <div class="card-content">
                 <p>
-                    <strong>${attackerActor.name}</strong> <em>(${atkSize})</em>
+                    <strong>${attackerActor.name}</strong> <em>(${atkSizeDisplay})</em>
                     strikes
-                    <strong>${targetActor.name}</strong> <em>(${tgtSize})</em>
+                    <strong>${targetActor.name}</strong> <em>(${tgtSizeDisplay})</em>
                 </p>
                 <p>Size difference: <strong>${diff} categor${diff === 1 ? 'y' : 'ies'}</strong></p>
                 <hr/>
@@ -495,8 +516,8 @@ Hooks.on('createChatMessage', async (message) => {
     }
     if (!targetActor) return;
 
-    // Calculate differential
-    const diff = getSizeDifferential(attackerActor.size, targetActor.size);
+    // Calculate differential (Small PCs may be normalized to Medium — see treatSmallPCsAsMedium)
+    const diff = getSizeDifferential(getEffectiveSize(attackerActor), getEffectiveSize(targetActor));
     if (diff === 0) return;
 
     await postSizeDifferentialMessage(attackerActor, targetActor, diff, outcome);
