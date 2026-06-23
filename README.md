@@ -280,7 +280,7 @@ When a qualifying hit occurs, a GM card appears showing:
 |--|---------|
 | Foundry VTT | 13+ |
 | PF2e System | 6.0.0+ |
-| Verified | Foundry 13.347, PF2e 7.12.2 |
+| Verified | Foundry 14.364, PF2e 8.2.0 |
 
 ---
 
