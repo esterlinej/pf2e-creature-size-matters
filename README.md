@@ -243,6 +243,11 @@ The GM card reflects the normalization when it applies — a Small PC's size
 label will show as `Small → Medium` so the GM can see at a glance why the
 differential resolved the way it did.
 
+### Treat Small Player Characters as Medium
+<p align="center">
+  <img src="assets/images/settings-additional-options.png" alt="Additional Options" width="600"/>
+</p>
+
 ---
 
 ## The Chat Card
@@ -291,16 +296,19 @@ narrative and tactical weight to size differentials without overwhelming players
 with additional mechanics they need to track. The GM sees the prompt, applies
 the damage, calls for the save, and narrates the result.
 
-Size differential only applies to **melee attacks**. Ranged attacks, spells,
-and abilities are not affected.
+Size differential only applies to **melee attacks**. Ranged attacks, spells, and abilities 
+are not affected.
 
-Bonus damage bypasses IWR (Immunity, Weakness, Resistance) when applied via
-the button — it is treated as a direct HP reduction. GMs should account for
-relevant resistances or immunities manually if needed.
+Bonus damage is applied via PF2e's native damage pipeline with IWR bypassed 
+(skipIWR: true) — it lands as a flat HP reduction unaffected by resistances or immunities.
 
 ---
 
 ## Changelog
+
+### v1.3.0
+- **Improved:** Apply Damage now uses PF2e's native applyDamage() pipeline,
+  producing a chat card with an undo button when damage is applied.
 
 ### v1.2.2
 - **Confirmed:** v14 Support.
