@@ -219,12 +219,12 @@ async function applyBonusDamage(targetUuid, damage) {
     const resolved = await fromUuid(targetUuid);
     const actor = resolved?.actor ?? resolved;
     if (!actor) return false;
-
-    const currentHP = actor.system?.attributes?.hp?.value;
-    if (currentHP === undefined) return false;
-
-    const newHP = Math.max(0, currentHP - damage);
-    await actor.update({ 'system.attributes.hp.value': newHP });
+    const token = actor.getActiveTokens()[0] ?? null;
+    await actor.applyDamage({
+        damage,
+        token,
+        skipIWR: true
+    });
     return true;
 }
 
