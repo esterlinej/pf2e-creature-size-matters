@@ -1,0 +1,54 @@
+name: Attach module.zip and module.json to Release
+
+# Fires when a GitHub Release is published (the "Choose a tag" + write
+# notes + Publish release" flow) — not on every tag push, so a tag
+# created without going through the Release UI won't trigger a build.
+on:
+  release:
+    types: [published]
+
+# Needed to upload assets onto the release that triggered this run.
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      # Checks out the exact commit the release's tag points to — not
+      # main — so this always matches what was actually tagged, even if
+      # commits have landed on main since.
+      - name: Checkout tagged commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      # No wrapper folder (files sit at the zip root) — matches the
+      # manually-built module.zip pattern already in use elsewhere, so
+      # Foundry extracts straight into a folder it names after
+      # module.json's own id, with no renaming quirks. package.json /
+      # package-lock.json / node_modules are dev-only here (just
+      # foundry-vtt-types for editor typechecking, no build step
+      # produces anything Foundry needs at runtime) so they're excluded
+      # from the shipped zip.
+      - name: Build module.zip
+        run: |
+          zip -r module.zip . \
+            -x ".git" -x ".git/*" \
+            -x ".github" -x ".github/*" \
+            -x ".gitignore" \
+            -x "package.json" \
+            -x "package-lock.json" \
+            -x "node_modules/*" \
+            -x "module.zip"
+
+      # Attaches to the SAME release (matched by tag_name) rather than
+      # creating a new one — leaves the release notes you already wrote
+      # untouched, since no body/generate_release_notes is set here.
+      - name: Attach assets to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: |
+            module.zip
+            module.json
