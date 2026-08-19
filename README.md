@@ -304,33 +304,6 @@ Bonus damage is applied via PF2e's native damage pipeline with IWR bypassed
 
 ---
 
-## Changelog
-
-### v1.3.0
-- **Improved:** Apply Damage now uses PF2e's native applyDamage() pipeline,
-  producing a chat card with an undo button when damage is applied.
-
-### v1.2.2
-- **Confirmed:** v14 Support.
-
-### v1.2.1
-- **Fix:** Update module.json version and download link.
-
-### v1.2.0
-- **New:** Treat Small Player Characters as Medium setting — softer option so
-  players aren't penalized (or favored) for choosing a Small ancestry in
-  size-differential calculations. Defaults to enabled. PCs only.
-
-### v1.1.0
-- **New:** Save Roll Mode setting — Post to Chat, GM Rolls, or Both.
-- **New:** Post to Chat posts a public inline Reflex save check players roll themselves.
-- **Fix:** Per-category tier overrides now correctly multiply by the actual size differential.
-
-### v1.0.0
-- Initial release
-
----
-
 ## License
 
 MIT License — see [LICENSE](LICENSE) for details.
