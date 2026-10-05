@@ -3,6 +3,11 @@
 All notable changes to PF2e Creature Size Matters are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.3]
+
+### Changed
+- Verified compatibility with Foundry VTT 14.368.
+
 ## [1.3.2]
 
 ### Changed
