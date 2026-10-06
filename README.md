@@ -1,19 +1,14 @@
 # PF2e Creature Size Matters
 
-A Foundry VTT module for **Pathfinder 2e** that adds meaningful mechanical weight
-to size differentials in melee combat.
+A Foundry VTT module for **Pathfinder 2e** that adds meaningful mechanical weight to size differentials in melee combat.
 
 ## The Problem
 
-PF2e normalizes damage across creature sizes — a Huge giant hitting a Medium
-adventurer deals damage appropriate to the level differential, not the *size*
-differential. The terror of fighting something three times your size has no
-mechanical expression. This module fixes that.
+PF2e normalizes damage across creature sizes — a Huge giant hitting a Medium adventurer deals damage appropriate to the level differential, not the *size* differential. The terror of fighting something three times your size has no mechanical expression. This module fixes that.
 
 ## What It Does
 
-When a larger creature successfully hits a smaller one in **melee combat**, the
-module posts a GM-only card to chat that:
+When a larger creature successfully hits a smaller one in **melee combat**, the module posts a GM-only card to chat that:
 
 - Calculates the size category difference between attacker and target
 - Prompts the GM to apply **bonus damage** scaled to the size differential
@@ -39,8 +34,7 @@ A Large creature (3) striking a Small creature (1) has a **2 category differenti
 
 ## Configuration
 
-All settings are found under **Game Settings → Module Settings → PF2e Creature
-Size Matters**.
+All settings are found under **Game Settings → Module Settings → PF2e Creature Size Matters**.
 
 ---
 
@@ -53,8 +47,7 @@ Size Matters**.
 #### Base Damage Per Size Category
 **Default: 5**
 
-The flat bonus damage applied per size category difference when no tier override
-is set.
+The flat bonus damage applied per size category difference when no tier override is set.
 
 - 1 category difference → 5 × 1 = **5** damage
 - 2 category difference → 5 × 2 = **10** damage
@@ -63,20 +56,17 @@ is set.
 #### Override: Per-Category Damage at 1 Category
 **Default: 0 (disabled)**
 
-Replaces the base damage per category for exactly 1 size category difference.
-Multiplied by 1. Leave at **0** to use the base value.
+Replaces the base damage per category for exactly 1 size category difference. Multiplied by 1. Leave at **0** to use the base value.
 
 #### Override: Per-Category Damage at 2 Categories
 **Default: 0 (disabled)**
 
-Replaces the base damage per category for exactly 2 size category difference.
-Multiplied by 2. Leave at **0** to use the base value.
+Replaces the base damage per category for exactly 2 size category difference. Multiplied by 2. Leave at **0** to use the base value.
 
 #### Override: Per-Category Damage at 3+ Categories
 **Default: 0 (disabled)**
 
-Replaces the base damage per category for 3 or more size category differentials.
-Multiplied by the actual size difference. Leave at **0** to use the base value.
+Replaces the base damage per category for 3 or more size category differentials. Multiplied by the actual size difference. Leave at **0** to use the base value.
 
 **Example with overrides set to 8, 10, 12:**
 
@@ -91,8 +81,7 @@ Multiplied by the actual size difference. Leave at **0** to use the base value.
 #### Double Bonus Damage on Critical Hit
 **Default: Enabled**
 
-When **enabled** — bonus damage is automatically doubled on a critical hit.
-A single apply button appears showing the doubled value.
+When **enabled** — bonus damage is automatically doubled on a critical hit. A single apply button appears showing the doubled value.
 
 When **disabled** — on a critical hit, two buttons appear in the card:
 - **Apply X Damage (Normal)** — applies the standard bonus
@@ -126,8 +115,7 @@ Formula: `Base DC + (DC Modifier × size difference)`
 #### Condition: 1 Category Difference
 **Default: Off-Guard**
 
-The condition applied to the target on a failed Reflex save when the attacker
-is 1 size category larger.
+The condition applied to the target on a failed Reflex save when the attacker is 1 size category larger.
 
 | Option | Effect |
 |--------|--------|
@@ -138,8 +126,7 @@ is 1 size category larger.
 #### Condition: 2+ Category Difference
 **Default: Prone**
 
-The condition applied to the target on a failed Reflex save when the attacker
-is 2 or more size categories larger.
+The condition applied to the target on a failed Reflex save when the attacker is 2 or more size categories larger.
 
 | Option | Effect |
 |--------|--------|
@@ -147,8 +134,7 @@ is 2 or more size categories larger.
 | Off-Guard | Target loses their Dexterity bonus to AC |
 | None | No condition — damage prompt only |
 
-The condition appears as a **draggable link** in the GM card — drag it directly
-onto the target token to apply after a failed save.
+The condition appears as a **draggable link** in the GM card — drag it directly onto the target token to apply after a failed save.
 
 ---
 
@@ -159,8 +145,7 @@ onto the target token to apply after a failed save.
 
 **Default: Post to Chat**
 
-Controls how the Reflex save is handled when the save button is clicked or
-auto-roll is enabled.
+Controls how the Reflex save is handled when the save button is clicked or auto-roll is enabled.
 
 | Option | Behavior |
 |--------|----------|
@@ -168,9 +153,7 @@ auto-roll is enabled.
 | **GM Rolls** | GM rolls the save against the target actor directly from the server side. |
 | **Both** | Both buttons appear on the GM card — Post to Chat and GM Roll independently. |
 
-**Post to Chat** is the recommended default — players roll with their own
-character's bonuses, feats, and items properly applied. The save appears
-publicly in chat and is preserved in the session log.
+**Post to Chat** is the recommended default — players roll with their own character's bonuses, feats, and items properly applied. The save appears publicly in chat and is preserved in the session log.
 
 ---
 
@@ -190,15 +173,13 @@ Controls how bonus damage is applied.
 #### Auto Roll Reflex Save
 **Default: Disabled**
 
-When **enabled** — the save is automatically triggered the moment a qualifying
-hit occurs, using the **Save Roll Mode** setting to determine how:
+When **enabled** — the save is automatically triggered the moment a qualifying hit occurs, using the **Save Roll Mode** setting to determine how:
 
 - **Post to Chat** — automatically posts the inline check to public chat
 - **GM Rolls** — automatically rolls the target's save server-side
 - **Both** — does both automatically
 
-When **disabled** — the appropriate button(s) appear on the GM card for manual
-triggering.
+When **disabled** — the appropriate button(s) appear on the GM card for manual triggering.
 
 ---
 
@@ -221,27 +202,17 @@ When **disabled** — the card is visible to all players.
 #### Treat Small Player Characters as Medium
 **Default: Enabled**
 
-A softer option for tables that don't want size category to penalize a
-player's choice of ancestry. When **enabled**, Small **player characters**
-(gnomes, goblins, halflings, etc.) are treated as Medium for the purposes of
-this module's size-differential calculations — both when they're the target
-of an attack and when they're the one attacking.
+A softer option for tables that don't want size category to penalize a player's choice of ancestry. When **enabled**, Small **player characters** (gnomes, goblins, halflings, etc.) are treated as Medium for the purposes of this module's size-differential calculations — both when they're the target of an attack and when they're the one attacking.
 
-This is intentionally one rule applied symmetrically: a Small PC neither
-takes bonus damage for being smaller than a Medium+ attacker, nor deals
-bonus damage for being smaller than a Medium+ target. It simply removes
-size from the equation for that PC, in both directions.
+This is intentionally one rule applied symmetrically: a Small PC neither takes bonus damage for being smaller than a Medium+ attacker, nor deals bonus damage for being smaller than a Medium+ target. It simply removes size from the equation for that PC, in both directions.
 
-When **disabled**, Small PCs are treated exactly like any other Small
-creature for all calculations.
+When **disabled**, Small PCs are treated exactly like any other Small creature for all calculations.
 
 > **Note:** This setting only affects **player characters** (actors of type
 > `character`). Small NPCs and monsters are unaffected and still use their
 > true size category.
 
-The GM card reflects the normalization when it applies — a Small PC's size
-label will show as `Small → Medium` so the GM can see at a glance why the
-differential resolved the way it did.
+The GM card reflects the normalization when it applies — a Small PC's size label will show as `Small → Medium` so the GM can see at a glance why the differential resolved the way it did.
 
 ### Treat Small Player Characters as Medium
 <p align="center">
@@ -285,22 +256,17 @@ When a qualifying hit occurs, a GM card appears showing:
 |--|---------|
 | Foundry VTT | 13+ |
 | PF2e System | 6.0.0+ |
-| Verified | Foundry 14.364, PF2e 8.2.0 |
+| Verified | Foundry 14.368, PF2e 8.2.0 |
 
 ---
 
 ## Design Notes
 
-This module is intentionally **GM-facing** by default. The intent is to add
-narrative and tactical weight to size differentials without overwhelming players
-with additional mechanics they need to track. The GM sees the prompt, applies
-the damage, calls for the save, and narrates the result.
+This module is intentionally **GM-facing** by default. The intent is to add narrative and tactical weight to size differentials without overwhelming players with additional mechanics they need to track. The GM sees the prompt, applies the damage, calls for the save, and narrates the result.
 
-Size differential only applies to **melee attacks**. Ranged attacks, spells, and abilities 
-are not affected.
+Size differential only applies to **melee attacks**. Ranged attacks, spells, and abilities are not affected.
 
-Bonus damage is applied via PF2e's native damage pipeline with IWR bypassed 
-(skipIWR: true) — it lands as a flat HP reduction unaffected by resistances or immunities.
+Bonus damage is applied via PF2e's native damage pipeline with IWR bypassed (skipIWR: true) — it lands as a flat HP reduction unaffected by resistances or immunities.
 
 ---
 
