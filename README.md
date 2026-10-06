@@ -256,7 +256,7 @@ When a qualifying hit occurs, a GM card appears showing:
 |--|---------|
 | Foundry VTT | 13+ |
 | PF2e System | 6.0.0+ |
-| Verified | Foundry 14.368, PF2e 8.2.0 |
+| Verified | Foundry 14.368, PF2e 8.5.1 |
 
 ---
 
