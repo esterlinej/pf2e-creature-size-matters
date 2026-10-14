@@ -397,7 +397,12 @@ async function postSizeDifferentialMessage(attackerActor, targetActor, diff, out
     await ChatMessage.create({
         content,
         speaker: { alias: 'Size Rules' },
-        whisper
+        whisper,
+        flags: { [MODULE_ID]: {
+            applied:    autoApply === 'auto',
+            savePosted: !!autoRoll && (saveRollMode === 'post' || saveRollMode === 'both'),
+            saveRolled: !!autoRoll && (saveRollMode === 'gm'   || saveRollMode === 'both'),
+        } }
     });
 
     // Auto apply damage
@@ -418,38 +423,52 @@ async function postSizeDifferentialMessage(attackerActor, targetActor, diff, out
 
 // ─── Button Click Handlers ────────────────────────────────────────────────────
 
-Hooks.on('renderChatMessage', (message, html) => {
+// Used-state lives in message flags so it survives reloads and re-renders.
+const BUTTON_STATES = [
+    { selector: '.size-apply-damage', flag: 'applied',    label: '✅ Damage Applied' },
+    { selector: '.size-post-save',    flag: 'savePosted', label: '✅ Save Posted' },
+    { selector: '.size-roll-save',    flag: 'saveRolled', label: '✅ Save Rolled' },
+];
+
+function markButtonsUsed(html, state) {
+    html.querySelectorAll(state.selector).forEach(btn => {
+        btn.disabled    = true;
+        btn.textContent = state.label;
+    });
+}
+
+Hooks.on('renderChatMessageHTML', (message, html) => {
+    // Restore the disabled state persisted in flags
+    for (const state of BUTTON_STATES) {
+        if (message.getFlag(MODULE_ID, state.flag)) markButtonsUsed(html, state);
+    }
 
     // Apply damage button(s)
-    html.find('.size-apply-damage').on('click', async (event) => {
-        if (!game.user.isGM) return;
-        const btn        = event.currentTarget;
+    html.querySelectorAll('.size-apply-damage').forEach(btn => btn.addEventListener('click', async () => {
+        if (!game.user.isGM || btn.disabled) return;
+        if (message.getFlag(MODULE_ID, 'applied')) return;
         const targetUuid = btn.dataset.targetUuid;
         const damage     = parseInt(btn.dataset.damage);
 
         const success = await applyBonusDamage(targetUuid, damage);
         if (success) {
-            html.find('.size-apply-damage').prop('disabled', true);
-            btn.textContent = '✅ Damage Applied';
+            markButtonsUsed(html, BUTTON_STATES[0]);
+            await message.setFlag(MODULE_ID, 'applied', true);
         } else {
             ui.notifications.warn('Size Matters: Could not find target actor to apply damage.');
         }
-    });
+    }));
 
     // Post save to chat button
-    html.find('.size-post-save').on('click', async (event) => {
-        if (!game.user.isGM) return;
-        const btn        = event.currentTarget;
+    html.querySelectorAll('.size-post-save').forEach(btn => btn.addEventListener('click', async () => {
+        if (!game.user.isGM || btn.disabled) return;
+        if (message.getFlag(MODULE_ID, 'savePosted')) return;
         const targetUuid = btn.dataset.targetUuid;
         const dc         = parseInt(btn.dataset.dc);
         const condition  = btn.dataset.condition;
 
-        console.log(`${MODULE_ID} | Post save clicked — UUID: ${targetUuid}, DC: ${dc}, Condition: ${condition}`);
-
         const resolved = await fromUuid(targetUuid);
         const actor = resolved?.actor ?? resolved;
-
-        console.log(`${MODULE_ID} | Resolved actor:`, actor?.name);
 
         if (!actor) {
             ui.notifications.warn('Size Matters: Could not find target actor.');
@@ -458,33 +477,35 @@ Hooks.on('renderChatMessage', (message, html) => {
 
         const success = await postSaveToChat(actor, dc, condition);
         if (success) {
-            btn.disabled    = true;
-            btn.textContent = '✅ Save Posted';
+            markButtonsUsed(html, BUTTON_STATES[1]);
+            await message.setFlag(MODULE_ID, 'savePosted', true);
         }
-    });
+    }));
 
     // GM roll save button
-    html.find('.size-roll-save').on('click', async (event) => {
-        if (!game.user.isGM) return;
-        const btn        = event.currentTarget;
+    html.querySelectorAll('.size-roll-save').forEach(btn => btn.addEventListener('click', async () => {
+        if (!game.user.isGM || btn.disabled) return;
+        if (message.getFlag(MODULE_ID, 'saveRolled')) return;
         const targetUuid = btn.dataset.targetUuid;
         const dc         = parseInt(btn.dataset.dc);
         const condition  = btn.dataset.condition;
 
         const success = await rollReflexSave(targetUuid, dc, condition);
         if (success) {
-            btn.disabled    = true;
-            btn.textContent = '✅ Save Rolled';
+            markButtonsUsed(html, BUTTON_STATES[2]);
+            await message.setFlag(MODULE_ID, 'saveRolled', true);
         } else {
             ui.notifications.warn('Size Matters: Could not find target actor to roll save.');
         }
-    });
+    }));
 });
 
 // ─── Main Hook ────────────────────────────────────────────────────────────────
 
 Hooks.on('createChatMessage', async (message) => {
-    if (!game.user.isGM) return;
+    // Only the active GM posts the card / auto-applies, so a second connected
+    // GM doesn't duplicate cards or apply the bonus damage twice.
+    if (!game.users.activeGM?.isSelf) return;
 
     const flags = message.flags?.pf2e;
     if (!flags) return;

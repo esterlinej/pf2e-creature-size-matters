@@ -3,6 +3,17 @@
 All notable changes to PF2e Creature Size Matters are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.4]
+
+### Fixed
+- With two GMs connected (e.g. a cast/bot GM user), only the active GM now posts the size card and auto-applies bonus damage, so cards are no longer duplicated and damage is no longer applied twice.
+- Apply Damage / Post Save / Roll Save buttons stay disabled after a reload or re-render; the used state is now stored in the chat message's flags.
+
+### Changed
+- Moved from the deprecated `renderChatMessage` (jQuery) hook to `renderChatMessageHTML`.
+- Removed leftover debug `console.log` lines from the Post Save handler.
+- Verified compatibility with Foundry VTT 14.369.
+
 ## [1.3.3]
 
 ### Changed
