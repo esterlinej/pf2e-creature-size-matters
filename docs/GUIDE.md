@@ -283,7 +283,21 @@ Size steps: Tiny 0, Small 1, Medium 2, Large 3, Huge 4, Gargantuan 5.
 
 This never changes the creature's real level, stats, or actor sheet — only PF2e **encounter XP**, **threat rating**, and **award** math plus GM-facing labels on opposition combatants in the encounter tracker (**`CSM: N`**, with a tooltip such as `Lv 11 → effective 13 (Huge; party ref. Medium)`).
 
-**Example (party all Medium, reference step 2):** a **Large** creature at sheet level **11** → effective **12** (+1). Four level-9 PCs vs Jhymm → **80 XP / Moderate** stock, **120 XP / Severe** with the shift on.
+<figure>
+  <table>
+    <tr>
+      <td align="center">
+        <img src="images/encounter-dragon-sheet.png" alt="Ancient Red Dragon actor sheet: Creature 19, Huge" width="360"/>
+      </td>
+      <td align="center">
+        <img src="images/encounter-tracker-csm.png" alt="Encounter tracker: Ancient Red Dragon CSM: 21" width="360"/>
+      </td>
+    </tr>
+  </table>
+  <figcaption>Paired example: the actor sheet still shows <strong>Creature 19</strong> and <strong>Huge</strong> (left). With a <strong>Medium</strong> party reference, Huge is +2 size steps → the tracker shows <strong>CSM: 21</strong> (19 + 2) for encounter XP and threat only (right). <strong>CSM: N</strong> is the budget level; hover for a tooltip such as <em>Lv 19 → effective 21 (Huge; party ref. Medium)</em>. The <strong>XP Bud.: …</strong> row is from <strong>Monk's Combat Details</strong>, not this module.</figcaption>
+</figure>
+
+**Example (party all Medium, reference step 2):** a **Large** creature at sheet level **11** → effective **12** (+1). Four level-9 PCs vs one Large opposition → **80 XP / Moderate** stock, **120 XP / Severe** with the shift on.
 
 **Example (party average Small, reference step 1):** a **Huge** creature (step 4) at level **4** → shift **+3** → effective **7** for encounter budget.
 
@@ -295,9 +309,13 @@ This never changes the creature's real level, stats, or actor sheet — only PF2
 
 Players do not see adjusted levels unless you expose the combat tracker to them; the feature is intended for GMs.
 
-### Other modules (PF2e HUD, XP Budget tools, etc.)
+### Built-in threat strip vs other budget UIs
 
-PF2e core shows **Threat** and **Award** in one `.metrics` row (pop-out and docked core tracker match). Some modules add their own budget UI in the sidebar — for example **PF2e HUD** tooltips or **PF2E XP Budget** — that may show separate “Moderate” / “XP BUD.” labels using `actor.level` or their own math. This module patches **`EncounterPF2e#analyze`** (combat `metrics`) and **`game.pf2e.gm.calculateXP`** (macro/API). Widgets that ignore those and read raw actor levels will **not** pick up size adjustment until their authors align with the same APIs.
+PF2e's built-in **Threat** / **Award** strip (top of the encounter tracker) budgets against the **Party** actor's average level and **full party member count**, not only the PCs currently listed as combatants. If some party members are not in the fight, that strip can show different XP or threat than you expect from the tokens on the map.
+
+Modules such as **Monk's Combat Details** (e.g. **XP Bud.: 160 / Extreme** in the screenshot) typically count **friendly tokens in the combat** and call **`game.pf2e.gm.calculateXP`** with those levels and counts. Both PF2e core (via our `EncounterPF2e#analyze` patch) and modules that use **`calculateXP`** pick up **size-adjusted opposition levels** when this setting is on; they may still **disagree with each other** on party size or level basis.
+
+Other addons — **PF2e HUD**, **PF2E XP Budget**, etc. — may read raw `actor.level` or their own math. This module patches **`EncounterPF2e#analyze`** (combat `metrics`) and **`game.pf2e.gm.calculateXP`** (macro/API). Widgets that bypass those APIs will not reflect size adjustment until their authors align with the same hooks.
 
 **PF2e opposition rule:** only combatants whose actors have **`alliance: opposition`** (plus hazards) count toward encounter XP. Party PCs are `alliance: party`. NPCs left on `neutral` are not in the opposition budget — set hostile/opposition alliance if they should count.
 
