@@ -9,7 +9,11 @@ import {
     getSizeLevelShift,
     formatEncounterEffectiveLevel,
     isSizeEncounterXpEnabled,
-    ENCOUNTER_REFERENCE_SIZE,
+    isReallyPC,
+    getPartyActorMembers,
+    getPartyReferenceSizeStep,
+    categoryToSizeLabel,
+    resolveEncounterReferenceStep,
     SIZE_LABELS,
 } from './size-common.mjs';
 
@@ -39,7 +43,7 @@ let analyzeInProgress = false;
 Hooks.once('init', () => {
     game.settings.register(MODULE_ID, 'sizeAdjustedEncounter', {
         name: 'Size-Adjusted Encounter Level',
-        hint: 'Shifts opposition effective level for encounter XP/threat only (Medium reference). Patches apply while enabled; lib-wrapper recommended but optional.',
+        hint: 'Shifts opposition effective level for encounter XP/threat vs the party\'s average size (Small PCs as Medium when that setting is on). Patches apply while enabled; lib-wrapper recommended but optional.',
         scope: 'world',
         config: true,
         type: Boolean,
@@ -57,18 +61,6 @@ Hooks.once('init', () => {
 });
 
 // ─── Opposition (matches EncounterPF2e.analyze) ──────────────────────────────
-
-/** @param {ActorPF2e} actor */
-function isReallyPC(actor) {
-    const traits = actor.system?.traits?.value ?? [];
-    return actor.isOfType?.('character')
-        && !['eidolon', 'minion'].some((t) => traits.includes(t));
-}
-
-function getPartyMembers() {
-    const { party } = game.actors;
-    return party?.members?.filter((a) => a.alliance === 'party' && isReallyPC(a)) ?? [];
-}
 
 /**
  * @param {EncounterPF2e} encounter
@@ -99,9 +91,10 @@ function isPf2eEncounterOpposition(actor) {
 /** @param {number[]} npcLevels @param {ActorPF2e[]} oppositionActors */
 function mergeAdjustedNpcLevels(npcLevels, oppositionActors) {
     if (oppositionActors.length !== npcLevels.length) return npcLevels;
+    const referenceStep = resolveEncounterReferenceStep(game.combat);
     return oppositionActors.map((actor, index) => {
         const sheetLevel = actor.level;
-        const budgetLevel = getEncounterBudgetLevel(actor);
+        const budgetLevel = getEncounterBudgetLevel(actor, referenceStep);
         if (npcLevels[index] === sheetLevel) return budgetLevel;
         if (npcLevels[index] === budgetLevel) return budgetLevel;
         return npcLevels[index];
@@ -117,7 +110,7 @@ function mergeAdjustedNpcLevels(npcLevels, oppositionActors) {
 function computeEncounterMetrics(encounter) {
     if (!game.ready || !game.pf2e?.gm) return null;
 
-    const partyMembers = getPartyMembers();
+    const partyMembers = getPartyActorMembers();
     const fightyPartyMembers = (() => {
         const inEncounter = partyMembers.filter((m) => m.combatant?.encounter === encounter);
         return inEncounter.length > 0 ? inEncounter : partyMembers;
@@ -135,9 +128,13 @@ function computeEncounterMetrics(encounter) {
         partyCharacters.reduce((sum, actor) => sum + actor.level, 0) / partyCharacters.length
     );
 
+    const referenceStep = getPartyReferenceSizeStep(fightyPartyMembers);
+
     const npcActors = opposition.filter((a) => a.isOfType?.('character', 'npc'));
     const useAdjusted = isSizeEncounterXpEnabled();
-    const npcLevels = npcActors.map((a) => (useAdjusted ? getEncounterBudgetLevel(a) : a.level));
+    const npcLevels = npcActors.map((a) => (
+        useAdjusted ? getEncounterBudgetLevel(a, referenceStep) : a.level
+    ));
 
     const hazards = opposition
         .filter((a) => a.isOfType?.('hazard'))
@@ -177,17 +174,17 @@ function computeEncounterMetrics(encounter) {
 
     if (useAdjusted) {
         const opponentNotes = npcActors
-            .filter((a) => getSizeLevelShift(a) !== 0)
+            .filter((a) => getSizeLevelShift(a, referenceStep) !== 0)
             .map((a) => ({
                 id: a.id,
                 name: a.name,
                 base: a.level,
-                effective: getEncounterBudgetLevel(a),
+                effective: getEncounterBudgetLevel(a, referenceStep),
                 size: SIZE_LABELS[getEffectiveSize(a)] ?? a.size
             }));
         metrics[MODULE_ID] = {
-            referenceSize: ENCOUNTER_REFERENCE_SIZE,
-            referenceLabel: SIZE_LABELS.med,
+            referenceCategory: referenceStep,
+            referenceLabel: categoryToSizeLabel(referenceStep),
             opponents: opponentNotes
         };
     }
@@ -233,14 +230,15 @@ function adjustNpcLevelsForCalculateXP(npcLevels) {
 
     const encounter = game.combat;
     if (encounter) {
-        const opposition = collectOppositionActors(encounter, getPartyMembers())
+        const opposition = collectOppositionActors(encounter, getPartyActorMembers())
             .filter((a) => a.isOfType?.('character', 'npc'));
+        const referenceStep = resolveEncounterReferenceStep(encounter);
         if (opposition.length === npcLevels.length) {
-            return opposition.map((a) => getEncounterBudgetLevel(a));
+            return opposition.map((a) => getEncounterBudgetLevel(a, referenceStep));
         }
         return npcLevels.map((level) => {
             const actor = opposition.find((a) => a.level === level);
-            return actor ? getEncounterBudgetLevel(actor) : level;
+            return actor ? getEncounterBudgetLevel(actor, referenceStep) : level;
         });
     }
 
@@ -440,7 +438,7 @@ function clearEncounterUiDecorations(root = document) {
 function shouldAnnotateOpposition(actor) {
     if (!actor?.isOfType?.('character', 'npc')) return false;
     if (actor.alliance === 'party') return false;
-    if (getSizeLevelShift(actor) === 0) return false;
+    if (getSizeLevelShift(actor, resolveEncounterReferenceStep(game.combat)) === 0) return false;
     return isPf2eEncounterOpposition(actor);
 }
 

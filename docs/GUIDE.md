@@ -271,22 +271,21 @@ If **Auto Apply Bonus Damage** is **Auto Apply**, damage is applied when the car
 
 **Setup:** No extra modules are required for melee size differential. For encounter XP/threat, enable the setting when you want it — patches apply only while it is on and are removed when you turn it off. **[lib-wrapper](https://foundryvtt.com/packages/lib-wrapper)** is **recommended** (Foundry may list it as a suggested module) so PF2e hooks coexist cleanly with other packages; without lib-wrapper the module uses a built-in fallback and shows a one-time GM info notice.
 
-When enabled, each creature's **encounter budget level** shifts by size relative to a fixed **Medium** reference — not the party's current size and not a “most common PC size” rule:
+When enabled, each opposition creature's **encounter budget level** shifts by:
 
-| Size (creature) | Shift to encounter level |
-|-----------------|--------------------------|
-| Tiny | −2 |
-| Small | −1 |
-| Medium | 0 |
-| Large | +1 |
-| Huge | +2 |
-| Gargantuan | +3 |
+**creature size step − party reference size step**
 
-**Small player characters** use the same **[Treat Small Player Characters as Medium](#treat-small-player-characters-as-medium)** setting: when that option is on, a Small PC counts as Medium (0 shift) for this feature as well. Small **NPCs** always use their real size (−1 for Small).
+Size steps: Tiny 0, Small 1, Medium 2, Large 3, Huge 4, Gargantuan 5.
 
-This never changes the creature's real level, stats, or actor sheet — only PF2e **encounter XP**, **threat rating**, and **award** math plus GM-facing labels.
+**Party reference:** the **average** size step of PCs in the fight (or the full party if none are in combat yet). **[Treat Small Player Characters as Medium](#treat-small-player-characters-as-medium)** applies when computing PC sizes. The average is **rounded to the nearest** step; **ties round toward Medium** (step 2). If no PCs are found, the reference is **Medium**.
 
-**Example:** A **Huge** creature at sheet level **4** counts as **effective level 6** for encounter XP/threat (Huge is two steps above Medium: 4 + 2 = 6). A GM might see `Lv 4 → effective 6 (Huge)` on the combat tracker or on the size-differential chat card for the attacker.
+**Small NPCs** always use their true size for the creature side of the math (not the PC normalization rule).
+
+This never changes the creature's real level, stats, or actor sheet — only PF2e **encounter XP**, **threat rating**, and **award** math plus GM-facing labels (`→ eff. N` tooltips name the party reference size).
+
+**Example (party all Medium, reference step 2):** a **Large** creature at sheet level **11** → effective **12** (+1). Four level-9 PCs vs Jhymm → **80 XP / Moderate** stock, **120 XP / Severe** with the shift on.
+
+**Example (party average Small, reference step 1):** a **Huge** creature at level **4** → effective **4 + (4 − 1) = 7** for encounter budget (Huge is +2 vs Medium-sized reference table wording, but here +3 vs Small reference).
 
 **Where it applies**
 
