@@ -14,6 +14,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 - Setting config uses explicit labels (checkbox reflects stored world value).
 - Opposition annotations require PF2e `alliance: opposition` (same as core `analyze`).
 - Replaced “re-analyze then patch snapshot” with a full `computeEncounterMetrics()` that mirrors PF2e `EncounterPF2e#analyze` (party/opposition from combatants) so threat, budget, and award always match one `calculateXP` call.
+- Fixed lib-wrapper `package_id` (must be `pf2e-creature-size-matters`, not suffixed ids); unregister uses the same id; register failures fall back to plain patches.
 
 ## [1.3.5]
 
