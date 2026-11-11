@@ -21,7 +21,7 @@ https://github.com/esterlinej/pf2e-creature-size-matters/releases/latest/downloa
 
 Or pick a version from [GitHub Releases](https://github.com/esterlinej/pf2e-creature-size-matters/releases).
 
-Enable the module in your world (**Module Management**) and configure it under **Game Settings → Module Settings → PF2e Creature Size Matters**. The optional size-adjusted encounter XP feature also needs **[lib-wrapper](https://foundryvtt.com/packages/lib-wrapper)**.
+Enable the module in your world (**Module Management**) and configure it under **Game Settings → Module Settings → PF2e Creature Size Matters**. For **Size-Adjusted Encounter Level**, **[lib-wrapper](https://foundryvtt.com/packages/lib-wrapper)** is optional but recommended (Foundry will suggest it; the module works without it).
 
 ## Documentation
 

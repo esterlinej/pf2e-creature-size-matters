@@ -3,13 +3,14 @@
     "settings": {
       "sizeAdjustedEncounter": {
         "name": "Size-Adjusted Encounter Level",
-        "hint": "When enabled, each size step above Medium adds +1 to a creature's effective level for encounter XP and threat only (Large +1, Huge +2, etc.); each step below Medium subtracts 1 (Small -1, Tiny -2). Reference size is always Medium. Small player characters count as Medium when Treat Small Player Characters as Medium is on. Does not change actor levels or stats. Requires the lib-wrapper module."
+        "hint": "When enabled, each size step above Medium adds +1 to a creature's effective level for encounter XP and threat only (Large +1, Huge +2, etc.); each step below Medium subtracts 1 (Small -1, Tiny -2). Reference size is always Medium. Small player characters count as Medium when Treat Small Player Characters as Medium is on. Does not change actor levels or stats. Patches install only while this is on; lib-wrapper is recommended but not required."
       }
     },
     "encounter": {
       "effectiveLevel": "Lv {base} → effective {effective} ({size})",
       "metricsReference": "XP/threat uses Medium as reference size.",
-      "chatCardPrefix": "Encounter XP level (attacker)"
+      "chatCardPrefix": "Encounter XP level (attacker)",
+      "libWrapperRecommended": "Size-Adjusted Encounter Level is active without lib-wrapper. It works, but installing lib-wrapper is recommended for better compatibility with other modules."
     }
   }
 }
