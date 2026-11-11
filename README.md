@@ -41,7 +41,7 @@ All settings are found under **Game Settings → Module Settings → PF2e Creatu
 ### Damage Settings
 
 <p align="center">
-  <img src="assets/images/settings-damage.png" alt="Damage Settings" width="600"/>
+  <img src="docs/images/settings-damage.png" alt="Damage Settings" width="600"/>
 </p>
 
 #### Base Damage Per Size Category
@@ -140,7 +140,7 @@ The condition appears as a **draggable link** in the GM card — drag it directl
 
 ### Save Roll Mode
 <p align="center">
-  <img src="assets/images/settings-save-dc-and-chat.png" alt="Save DC and Chat Settings" width="600"/>
+  <img src="docs/images/settings-save-dc-and-chat.png" alt="Save DC and Chat Settings" width="600"/>
 </p>
 
 **Default: Post to Chat**
@@ -216,7 +216,7 @@ The GM card reflects the normalization when it applies — a Small PC's size lab
 
 ### Treat Small Player Characters as Medium
 <p align="center">
-  <img src="assets/images/settings-additional-options.png" alt="Additional Options" width="600"/>
+  <img src="docs/images/settings-additional-options.png" alt="Additional Options" width="600"/>
 </p>
 
 ---
@@ -240,10 +240,10 @@ When a qualifying hit occurs, a GM card appears showing:
   </tr>
   <tr>
     <td align="center">
-      <img src="assets/images/chat-normal-hit.png" alt="Chat Card - Normal Hit" width="280"/>
+      <img src="docs/images/chat-normal-hit.png" alt="Chat Card - Normal Hit" width="280"/>
     </td>
     <td align="center">
-      <img src="assets/images/chat-critical-hit.png" alt="Chat Card - Critical Hit" width="280"/>
+      <img src="docs/images/chat-critical-hit.png" alt="Chat Card - Critical Hit" width="280"/>
     </td>
   </tr>
 </table>
