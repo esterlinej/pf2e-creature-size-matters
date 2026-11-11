@@ -1,21 +1,25 @@
 /**
- * Size-adjusted encounter level for XP / threat (Medium reference, GM-only display).
+ * Size-adjusted encounter level for XP / threat (party reference, GM-only display).
  */
 
 import {
     MODULE_ID,
-    getEffectiveSize,
     getEncounterBudgetLevel,
     getSizeLevelShift,
     formatEncounterEffectiveLevel,
     isSizeEncounterXpEnabled,
-    isReallyPC,
     getPartyActorMembers,
-    getPartyReferenceSizeStep,
-    categoryToSizeLabel,
     resolveEncounterReferenceStep,
-    SIZE_LABELS,
 } from './size-common.mjs';
+import {
+    collectOppositionActors,
+    isPf2eEncounterOpposition,
+    computeEncounterMetrics,
+} from './encounter-metrics.mjs';
+import {
+    createAnalyzeLibWrapper,
+    createCalculateXpLibWrapper,
+} from './encounter-wrapper-logic.mjs';
 
 /** @type {{
  *   active: boolean,
@@ -35,58 +39,18 @@ const LIBWRAPPER_PACKAGE_ID = MODULE_ID;
 
 let syncTimer;
 let metricsRefreshTimer;
-/** Prevents re-entrant analyze when refreshAllEncounterMetrics sets encounter.metrics. */
-let analyzeInProgress = false;
+/** Prevents re-entrant size adjustment while computing metrics (vanilla analyze still chains). */
+const analyzeGuard = { inProgress: false };
 
-// ─── Settings ────────────────────────────────────────────────────────────────
-
-Hooks.once('init', () => {
-    game.settings.register(MODULE_ID, 'sizeAdjustedEncounter', {
-        name: 'Size-Adjusted Encounter Level',
-        hint: 'Shifts opposition effective level for encounter XP/threat vs the party\'s average size (Small PCs as Medium when that setting is on). Patches apply while enabled; lib-wrapper recommended but optional.',
-        scope: 'world',
-        config: true,
-        type: Boolean,
-        default: false,
-        requiresReload: false,
-        onChange: () => queueSyncEncounterXpPatches()
-    });
-
-    game.settings.register(MODULE_ID, 'libWrapperNoticeShown', {
-        scope: 'client',
-        config: false,
-        type: Boolean,
-        default: false
-    });
+const analyzeSizeWrapper = createAnalyzeLibWrapper({
+    guard: analyzeGuard,
+    isEnabled: () => isSizeEncounterXpEnabled(),
+    isReadyForAdjustment: () => Boolean(game.ready && game.pf2e?.gm),
+    computeAdjustedMetrics: (encounter) => computeEncounterMetrics(encounter, getVanillaCalculateXP()),
+    onAdjustmentError: (err) => {
+        console.warn(`${MODULE_ID} | analyze wrapper adjustment failed; using vanilla metrics`, err);
+    },
 });
-
-// ─── Opposition (matches EncounterPF2e.analyze) ──────────────────────────────
-
-/**
- * @param {EncounterPF2e} encounter
- * @param {ActorPF2e[]} partyMembers
- */
-function collectOppositionActors(encounter, partyMembers) {
-    const opposition = [];
-    const seen = new Set();
-    for (const combatant of encounter.combatants) {
-        const actor = combatant.actor;
-        if (!actor || partyMembers.includes(actor)) continue;
-        const counts = actor.alliance === 'opposition' || actor.isOfType?.('hazard');
-        if (!counts) continue;
-        if (seen.has(actor.id)) continue;
-        seen.add(actor.id);
-        opposition.push(actor);
-    }
-    return opposition;
-}
-
-/** @param {ActorPF2e} actor */
-function isPf2eEncounterOpposition(actor) {
-    if (!actor) return false;
-    if (actor.isOfType?.('hazard')) return true;
-    return actor.alliance === 'opposition' && actor.isOfType?.('character', 'npc');
-}
 
 /** @param {number[]} npcLevels @param {ActorPF2e[]} oppositionActors */
 function mergeAdjustedNpcLevels(npcLevels, oppositionActors) {
@@ -99,121 +63,6 @@ function mergeAdjustedNpcLevels(npcLevels, oppositionActors) {
         if (npcLevels[index] === budgetLevel) return budgetLevel;
         return npcLevels[index];
     });
-}
-
-// ─── Encounter metrics (mirrors EncounterPF2e.analyze) ───────────────────────
-
-/**
- * Full encounter metrics — same rules as PF2e core, optional size-adjusted NPC levels.
- * @param {EncounterPF2e} encounter
- */
-function computeEncounterMetrics(encounter) {
-    if (!game.ready || !game.pf2e?.gm) return null;
-
-    const partyMembers = getPartyActorMembers();
-    const fightyPartyMembers = (() => {
-        const inEncounter = partyMembers.filter((m) => m.combatant?.encounter === encounter);
-        return inEncounter.length > 0 ? inEncounter : partyMembers;
-    })();
-
-    const opposition = collectOppositionActors(encounter, partyMembers);
-    if (!game.actors.party || fightyPartyMembers.length === 0 || opposition.length === 0) {
-        return null;
-    }
-
-    const partyCharacters = fightyPartyMembers.filter((m) => m.isOfType?.('character'));
-    if (partyCharacters.length === 0) return null;
-
-    const partyLevel = Math.round(
-        partyCharacters.reduce((sum, actor) => sum + actor.level, 0) / partyCharacters.length
-    );
-
-    const referenceStep = getPartyReferenceSizeStep(fightyPartyMembers);
-
-    const npcActors = opposition.filter((a) => a.isOfType?.('character', 'npc'));
-    const useAdjusted = isSizeEncounterXpEnabled();
-    const npcLevels = npcActors.map((a) => (
-        useAdjusted ? getEncounterBudgetLevel(a, referenceStep) : a.level
-    ));
-
-    const hazards = opposition
-        .filter((a) => a.isOfType?.('hazard'))
-        .map((h) => ({
-            level: h.level,
-            isComplex: h.isComplex ?? h.system?.details?.isComplex
-        }));
-
-    const calculateXP = getVanillaCalculateXP();
-    const pwol = Boolean(game.pf2e.settings?.variants?.pwol?.enabled);
-    const result = calculateXP.call(
-        game.pf2e.gm,
-        partyLevel,
-        fightyPartyMembers.length,
-        npcLevels,
-        hazards,
-        { pwol }
-    );
-
-    const threat = result.rating;
-    const budget = {
-        spent: result.totalXP,
-        max: result.encounterBudgets[threat],
-        partyLevel
-    };
-    const award = {
-        xp: Math.floor(result.xpPerPlayer * (fightyPartyMembers.length / partyMembers.length)),
-        recipients: partyMembers
-    };
-
-    const metrics = {
-        threat,
-        budget,
-        award,
-        participants: { party: fightyPartyMembers, opposition }
-    };
-
-    if (useAdjusted) {
-        const opponentNotes = npcActors
-            .filter((a) => getSizeLevelShift(a, referenceStep) !== 0)
-            .map((a) => ({
-                id: a.id,
-                name: a.name,
-                base: a.level,
-                effective: getEncounterBudgetLevel(a, referenceStep),
-                size: SIZE_LABELS[getEffectiveSize(a)] ?? a.size
-            }));
-        metrics[MODULE_ID] = {
-            referenceCategory: referenceStep,
-            referenceLabel: categoryToSizeLabel(referenceStep),
-            opponents: opponentNotes
-        };
-    }
-
-    return metrics;
-}
-
-/**
- * libWrapper WRAPPER: call `wrapped` exactly once on disable, fallback, or re-entry.
- * @this {EncounterPF2e}
- */
-function analyzeSizeWrapper(wrapped, ...args) {
-    if (analyzeInProgress) {
-        return wrapped.apply(this, args);
-    }
-    try {
-        if (!isSizeEncounterXpEnabled()) {
-            return wrapped.apply(this, args);
-        }
-        analyzeInProgress = true;
-        const adjusted = computeEncounterMetrics(this);
-        if (adjusted !== null) return adjusted;
-        return wrapped.apply(this, args);
-    } catch (err) {
-        console.warn(`${MODULE_ID} | analyze wrapper failed; using vanilla analyze`, err);
-        return wrapped.apply(this, args);
-    } finally {
-        analyzeInProgress = false;
-    }
 }
 
 /** @param {number[]} npcLevels */
@@ -245,19 +94,13 @@ function adjustNpcLevelsForCalculateXP(npcLevels) {
     return npcLevels;
 }
 
-/** @param {typeof game.pf2e.gm.calculateXP} wrapped */
-function calculateXpWrapper(wrapped, partyLevel, partySize, npcLevels, hazards, dcOptions) {
-    try {
-        if (!isSizeEncounterXpEnabled()) {
-            return wrapped(partyLevel, partySize, npcLevels, hazards, dcOptions);
-        }
-        const adjusted = adjustNpcLevelsForCalculateXP(npcLevels);
-        return wrapped(partyLevel, partySize, adjusted, hazards, dcOptions);
-    } catch (err) {
-        console.warn(`${MODULE_ID} | calculateXP wrapper failed; using vanilla`, err);
-        return wrapped(partyLevel, partySize, npcLevels, hazards, dcOptions);
-    }
-}
+const calculateXpWrapper = createCalculateXpLibWrapper({
+    isEnabled: () => isSizeEncounterXpEnabled(),
+    adjustNpcLevels: adjustNpcLevelsForCalculateXP,
+    onError: (err) => {
+        console.warn(`${MODULE_ID} | calculateXP wrapper adjustment failed; using vanilla levels`, err);
+    },
+});
 
 function getVanillaCalculateXP() {
     if (!patchState.vanillaCalculateXP) {
@@ -331,7 +174,7 @@ function installPlainPatches() {
     const proto = CONFIG.Combat.documentClass.prototype;
     patchState.analyzeOriginal = proto.analyze;
     proto.analyze = function sizeMattersAnalyzePatched(...args) {
-        return analyzeSizeWrapper(patchState.analyzeOriginal.bind(this), ...args);
+        return analyzeSizeWrapper.call(this, patchState.analyzeOriginal.bind(this), ...args);
     };
 
     const original = patchState.vanillaCalculateXP;
@@ -353,6 +196,28 @@ function removePlainPatches() {
         game.pf2e.gm.calculateXP = patchState.vanillaCalculateXP;
     }
 }
+
+// ─── Settings ────────────────────────────────────────────────────────────────
+
+Hooks.once('init', () => {
+    game.settings.register(MODULE_ID, 'sizeAdjustedEncounter', {
+        name: 'Size-Adjusted Encounter Level',
+        hint: 'Shifts opposition effective level for encounter XP/threat vs the party\'s average size (Small PCs as Medium when that setting is on). Patches apply while enabled; lib-wrapper recommended but optional.',
+        scope: 'world',
+        config: true,
+        type: Boolean,
+        default: false,
+        requiresReload: false,
+        onChange: () => queueSyncEncounterXpPatches()
+    });
+
+    game.settings.register(MODULE_ID, 'libWrapperNoticeShown', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: false
+    });
+});
 
 function maybeNotifyLibWrapperRecommendation() {
     if (globalThis.libWrapper || !game.user?.isGM) return;
@@ -398,7 +263,7 @@ function syncEncounterXpPatches() {
         removeEncounterXpPatches();
     }
     if (game.ready) {
-        refreshAllEncounterMetrics();
+        queueMetricsRefresh();
     }
 }
 
@@ -411,7 +276,11 @@ function refreshAllEncounterMetrics() {
     if (!game.ready || !game.user?.isGM) return;
     try {
         for (const encounter of game.combats) {
-            encounter.metrics = encounter.analyze();
+            if (typeof encounter.prepareDerivedData === 'function') {
+                encounter.prepareDerivedData();
+            } else {
+                encounter.reset();
+            }
         }
     } catch (err) {
         console.warn(`${MODULE_ID} | refreshAllEncounterMetrics failed`, err);
@@ -423,7 +292,7 @@ function refreshAllEncounterMetrics() {
 function rerenderCombatTracker() {
     const combatApp = ui.combat;
     if (!combatApp?.rendered) return;
-  combatApp.render({ force: true });
+    combatApp.render({ force: true });
 }
 
 // ─── Combat tracker UI (GM only) ─────────────────────────────────────────────
