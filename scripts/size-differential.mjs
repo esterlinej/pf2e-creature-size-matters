@@ -438,10 +438,14 @@ function markButtonsUsed(html, state) {
 }
 
 Hooks.on('renderChatMessageHTML', (message, html) => {
+    if (!message.flags?.[MODULE_ID]) return;
+
     // Restore the disabled state persisted in flags
     for (const state of BUTTON_STATES) {
         if (message.getFlag(MODULE_ID, state.flag)) markButtonsUsed(html, state);
     }
+
+    if (!game.user.isGM) return;
 
     // Apply damage button(s)
     html.querySelectorAll('.size-apply-damage').forEach(btn => btn.addEventListener('click', async () => {
