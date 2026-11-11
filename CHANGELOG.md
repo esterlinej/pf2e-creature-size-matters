@@ -3,6 +3,15 @@
 All notable changes to PF2e Creature Size Matters are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.5]
+
+### Changed
+- Verified compatibility with Foundry VTT 14.370 (latest stable v14 build as of this release).
+- Verified compatibility with PF2e system 8.7.0.
+
+### Fixed
+- `renderChatMessageHTML` no longer runs flag lookups, DOM queries, or GM click handlers on unrelated chat messages; GM listeners are registered only for GMs.
+
 ## [1.3.4]
 
 ### Fixed
