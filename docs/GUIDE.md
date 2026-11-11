@@ -267,7 +267,9 @@ If **Auto Apply Bonus Damage** is **Auto Apply**, damage is applied when the car
 
 ## Size-Adjusted Encounter Level (XP & threat)
 
-**Setting:** **Size-Adjusted Encounter Level** (world, default **off**). Requires the **[lib-wrapper](https://foundryvtt.com/packages/lib-wrapper)** module.
+**Setting:** **Size-Adjusted Encounter Level** (world, default **off**).
+
+**Setup:** No extra modules are required for melee size differential. For encounter XP/threat, enable the setting when you want it — patches apply only while it is on and are removed when you turn it off. **[lib-wrapper](https://foundryvtt.com/packages/lib-wrapper)** is **recommended** (Foundry may list it as a suggested module) so PF2e hooks coexist cleanly with other packages; without lib-wrapper the module uses a built-in fallback and shows a one-time GM info notice.
 
 When enabled, each creature's **encounter budget level** shifts by size relative to a fixed **Medium** reference — not the party's current size and not a “most common PC size” rule:
 
@@ -288,8 +290,8 @@ This never changes the creature's real level, stats, or actor sheet — only PF2
 
 **Where it applies**
 
-- **Combat tracker** header metrics (threat / XP budget / award) via a lib-wrapper on PF2e `EncounterPF2e#analyze`.
-- **XP from Encounter** macro when selected opposition tokens match the macro's level list (wrapper on `game.pf2e.gm.calculateXP`).
+- **Combat tracker** header metrics (threat / XP budget / award) by wrapping PF2e `EncounterPF2e#analyze` while the setting is on.
+- **XP from Encounter** macro when selected opposition tokens match the macro's level list (`game.pf2e.gm.calculateXP`, same on/off patch lifecycle).
 - **Size-differential chat card** (GM): optional encounter-level line for the attacker when a shift applies.
 
 Players do not see adjusted levels unless you expose the combat tracker to them; the feature is intended for GMs.
@@ -312,7 +314,7 @@ This module is intentionally **GM-facing** by default. The intent is to add narr
 | Differential looks wrong for a Small PC | If **Treat Small Player Characters as Medium** is on, the card shows `Small → Medium` for player characters only; NPCs/monsters use true size. |
 | Bonus damage resisted or reduced | Bonus damage bypasses IWR by design; if HP did not change, confirm the target UUID resolved and check the Foundry console for module warnings. |
 | Save not in player hands | Set **Save Roll Mode** to **Post to Chat** (recommended). **GM Rolls** and **Both** add server-side rolling the GM must trigger. |
-| Encounter XP unchanged with setting on | Confirm **lib-wrapper** is installed and active; reload the world after first enable. Add opposition to combat and check tracker metrics. |
+| Encounter XP unchanged with setting on | Confirm the setting is **enabled** (patches are off when disabled). Add opposition to combat and check tracker metrics. Toggle off/on if metrics seem stuck. |
 | Macro XP ignores size | Select **all opposition tokens** you include in the macro; adjusted levels apply only when token count matches the macro's opposition list. |
 
 For version compatibility, see the [README](../README.md#compatibility).

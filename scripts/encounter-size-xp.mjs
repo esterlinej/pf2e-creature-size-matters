@@ -13,7 +13,20 @@ import {
     SIZE_LABELS,
 } from './size-common.mjs';
 
-// ─── Setting ─────────────────────────────────────────────────────────────────
+/** @type {{ active: boolean, viaLibWrapper: boolean, analyzeOriginal: Function | null, calculateXpOriginal: Function | null }} */
+const patchState = {
+    active: false,
+    viaLibWrapper: false,
+    analyzeOriginal: null,
+    calculateXpOriginal: null,
+};
+
+const WRAPPER_IDS = {
+    analyze: `${MODULE_ID}.analyze`,
+    calculateXP: `${MODULE_ID}.calculateXP`,
+};
+
+// ─── Settings ────────────────────────────────────────────────────────────────
 
 Hooks.once('init', () => {
     game.settings.register(MODULE_ID, 'sizeAdjustedEncounter', {
@@ -24,6 +37,13 @@ Hooks.once('init', () => {
         type: Boolean,
         default: false,
         requiresReload: false
+    });
+
+    game.settings.register(MODULE_ID, 'libWrapperNoticeShown', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: false
     });
 });
 
@@ -105,9 +125,7 @@ function adjustNpcLevelsForMacro(npcLevels) {
     return opposition.map((a) => getEncounterBudgetLevel(a));
 }
 
-/**
- * @param {typeof game.pf2e.gm.calculateXP} wrapped
- */
+/** @param {typeof game.pf2e.gm.calculateXP} wrapped */
 function calculateXpWrapper(wrapped, partyLevel, partySize, npcLevels, hazards, dcOptions) {
     if (!isSizeEncounterXpEnabled()) {
         return wrapped(partyLevel, partySize, npcLevels, hazards, dcOptions);
@@ -116,28 +134,112 @@ function calculateXpWrapper(wrapped, partyLevel, partySize, npcLevels, hazards, 
     return wrapped(partyLevel, partySize, adjusted, hazards, dcOptions);
 }
 
-function registerLibWrappers() {
-    const libWrapper = globalThis.libWrapper;
-    if (!libWrapper) {
-        console.warn(`${MODULE_ID} | lib-wrapper not active; size-adjusted encounter XP disabled`);
-        return false;
-    }
+function canInstallPatches() {
+    return Boolean(
+        game.pf2e?.gm?.calculateXP
+        && CONFIG.Combat?.documentClass?.prototype?.analyze
+    );
+}
 
+function installLibWrapperPatches() {
+    const libWrapper = globalThis.libWrapper;
     libWrapper.register(
-        MODULE_ID,
+        WRAPPER_IDS.analyze,
         'CONFIG.Combat.documentClass.prototype.analyze',
         analyzeSizeWrapper,
         'WRAPPER'
     );
-
     libWrapper.register(
-        MODULE_ID,
+        WRAPPER_IDS.calculateXP,
         'game.pf2e.gm.calculateXP',
         calculateXpWrapper,
         'WRAPPER'
     );
+    patchState.viaLibWrapper = true;
+}
 
-    return true;
+function removeLibWrapperPatches() {
+    const libWrapper = globalThis.libWrapper;
+    if (!libWrapper) return;
+    libWrapper.unregister(WRAPPER_IDS.analyze);
+    libWrapper.unregister(WRAPPER_IDS.calculateXP);
+}
+
+function installPlainPatches() {
+    if (patchState.analyzeOriginal) return;
+
+    const proto = CONFIG.Combat.documentClass.prototype;
+    patchState.analyzeOriginal = proto.analyze;
+    proto.analyze = function sizeMattersAnalyzePatched() {
+        return analyzeSizeWrapper(patchState.analyzeOriginal.bind(this));
+    };
+
+    patchState.calculateXpOriginal = game.pf2e.gm.calculateXP;
+    const original = patchState.calculateXpOriginal;
+    game.pf2e.gm.calculateXP = function sizeMattersCalculateXpPatched(...args) {
+        return calculateXpWrapper(original.bind(game.pf2e.gm), ...args);
+    };
+    patchState.viaLibWrapper = false;
+}
+
+function removePlainPatches() {
+    if (patchState.viaLibWrapper) return;
+
+    const proto = CONFIG.Combat.documentClass.prototype;
+    if (patchState.analyzeOriginal) {
+        proto.analyze = patchState.analyzeOriginal;
+        patchState.analyzeOriginal = null;
+    }
+    if (patchState.calculateXpOriginal) {
+        game.pf2e.gm.calculateXP = patchState.calculateXpOriginal;
+        patchState.calculateXpOriginal = null;
+    }
+}
+
+function maybeNotifyLibWrapperRecommendation(usedLibWrapper) {
+    if (usedLibWrapper || !game.user?.isGM) return;
+    if (game.settings.get(MODULE_ID, 'libWrapperNoticeShown')) return;
+
+    ui.notifications.info(game.i18n.localize(`${MODULE_ID}.encounter.libWrapperRecommended`), { permanent: false });
+    game.settings.set(MODULE_ID, 'libWrapperNoticeShown', true);
+}
+
+function installEncounterXpPatches() {
+    if (patchState.active || !canInstallPatches()) return;
+
+    if (globalThis.libWrapper) {
+        installLibWrapperPatches();
+    } else {
+        installPlainPatches();
+        maybeNotifyLibWrapperRecommendation(false);
+    }
+
+    patchState.active = true;
+}
+
+function removeEncounterXpPatches() {
+    if (!patchState.active) return;
+
+    if (patchState.viaLibWrapper) {
+        removeLibWrapperPatches();
+    } else {
+        removePlainPatches();
+    }
+
+    patchState.active = false;
+    patchState.viaLibWrapper = false;
+}
+
+function syncEncounterXpPatches() {
+    if (!game.pf2e) return;
+
+    if (isSizeEncounterXpEnabled()) {
+        installEncounterXpPatches();
+        refreshAllEncounterMetrics();
+    } else {
+        removeEncounterXpPatches();
+        refreshAllEncounterMetrics();
+    }
 }
 
 function refreshAllEncounterMetrics() {
@@ -152,13 +254,12 @@ function refreshAllEncounterMetrics() {
 }
 
 Hooks.once('pf2e.systemReady', () => {
-    if (!registerLibWrappers()) return;
-    refreshAllEncounterMetrics();
+    syncEncounterXpPatches();
 });
 
-Hooks.on('settingChanged', (module, key, value) => {
+Hooks.on('settingChanged', (module, key) => {
     if (module !== MODULE_ID || key !== 'sizeAdjustedEncounter') return;
-    refreshAllEncounterMetrics();
+    syncEncounterXpPatches();
 });
 
 // ─── Combat tracker level labels (GM only) ───────────────────────────────────

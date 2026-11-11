@@ -32,10 +32,11 @@
     }
   ],
   "relationships": {
-    "requires": [
+    "recommends": [
       {
         "id": "lib-wrapper",
-        "type": "module"
+        "type": "module",
+        "reason": "Optional: used for the Size-Adjusted Encounter Level setting to avoid conflicts with other modules"
       }
     ],
     "systems": [
