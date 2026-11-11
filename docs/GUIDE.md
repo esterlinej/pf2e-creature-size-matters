@@ -285,7 +285,7 @@ This never changes the creature's real level, stats, or actor sheet — only PF2
 
 **Example (party all Medium, reference step 2):** a **Large** creature at sheet level **11** → effective **12** (+1). Four level-9 PCs vs Jhymm → **80 XP / Moderate** stock, **120 XP / Severe** with the shift on.
 
-**Example (party average Small, reference step 1):** a **Huge** creature at level **4** → effective **4 + (4 − 1) = 7** for encounter budget (Huge is +2 vs Medium-sized reference table wording, but here +3 vs Small reference).
+**Example (party average Small, reference step 1):** a **Huge** creature (step 4) at level **4** → shift **+3** → effective **7** for encounter budget.
 
 **Where it applies**
 
