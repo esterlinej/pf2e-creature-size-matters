@@ -4,7 +4,7 @@
   "description": "Foundry VTT Module for Pathfinder 2e",
   "main": "index.js",
   "scripts": {
-    "test": "node tests/module-id.test.mjs && node tests/encounter-wrappers.test.mjs && node tests/encounter-math.test.mjs"
+    "test": "node tests/module-id.test.mjs && node tests/encounter-wrappers.test.mjs && node tests/encounter-math.test.mjs && node tests/encounter-tracker-marker.test.mjs"
   },
   "repository": {
     "type": "git",

@@ -18,6 +18,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 - Analyze/calculateXP wrappers: correct libWrapper WRAPPER arity, try/catch with vanilla fallback, re-entry guard; no tracker “Medium reference” line (eff. markers kept).
 - Encounter XP reference size is the party’s **average PC size step** (Small PCs as Medium when configured; ties round toward Medium; fallback Medium). Tooltips include `party ref. {size}`.
 - **libWrapper fix:** `analyze` WRAPPER always chains `wrapped(...args)` once, then optionally replaces metrics; refresh uses `prepareDerivedData`/`reset` instead of direct `analyze()`. Unit tests cover wrapper branches and Joel lineup math.
+- Combat tracker: restore **`renderEncounterTracker` / `renderCombatTracker` / `renderApplicationV2`** hooks (v14 part renders); idempotent **`CSM: N`** markers (was `→ eff. N`), tooltips unchanged.
 
 ## [1.3.5]
 

@@ -281,7 +281,7 @@ Size steps: Tiny 0, Small 1, Medium 2, Large 3, Huge 4, Gargantuan 5.
 
 **Small NPCs** always use their true size for the creature side of the math (not the PC normalization rule).
 
-This never changes the creature's real level, stats, or actor sheet — only PF2e **encounter XP**, **threat rating**, and **award** math plus GM-facing labels (`→ eff. N` tooltips name the party reference size).
+This never changes the creature's real level, stats, or actor sheet — only PF2e **encounter XP**, **threat rating**, and **award** math plus GM-facing labels on opposition combatants in the encounter tracker (**`CSM: N`**, with a tooltip such as `Lv 11 → effective 13 (Huge; party ref. Medium)`).
 
 **Example (party all Medium, reference step 2):** a **Large** creature at sheet level **11** → effective **12** (+1). Four level-9 PCs vs Jhymm → **80 XP / Moderate** stock, **120 XP / Severe** with the shift on.
 
