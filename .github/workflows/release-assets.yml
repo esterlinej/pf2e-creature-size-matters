@@ -40,6 +40,7 @@ jobs:
             -x "package.json" \
             -x "package-lock.json" \
             -x "node_modules/*" \
+            -x "docs" -x "docs/*" \
             -x "module.zip"
 
       # Attaches to the SAME release (matched by tag_name) rather than
