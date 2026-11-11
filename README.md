@@ -9,6 +9,7 @@ A Foundry VTT module for **Pathfinder 2e** that adds meaningful mechanical weigh
 - Configurable damage tiers, save DC, conditions, automation, and critical doubling
 - **Post to Chat** Reflex checks so players roll their own saves with full bonuses
 - Optional **Treat Small Player Characters as Medium** so ancestry size does not penalize PCs
+- Optional **size-adjusted encounter level** (Medium reference) for GM encounter XP and threat — does not change actor stats
 
 ## Install
 
@@ -20,7 +21,7 @@ https://github.com/esterlinej/pf2e-creature-size-matters/releases/latest/downloa
 
 Or pick a version from [GitHub Releases](https://github.com/esterlinej/pf2e-creature-size-matters/releases).
 
-Enable the module in your world (**Module Management**) and configure it under **Game Settings → Module Settings → PF2e Creature Size Matters**.
+Enable the module in your world (**Module Management**) and configure it under **Game Settings → Module Settings → PF2e Creature Size Matters**. The optional size-adjusted encounter XP feature also needs **[lib-wrapper](https://foundryvtt.com/packages/lib-wrapper)**.
 
 ## Documentation
 

@@ -4,16 +4,13 @@
  * with bonus damage and a Reflex save requirement
  */
 
-const MODULE_ID = 'pf2e-creature-size-matters';
-
-const SIZE_MAP = {
-    tiny: 0, sm: 1, med: 2, lg: 3, huge: 4, grg: 5
-};
-
-const SIZE_LABELS = {
-    tiny: 'Tiny', sm: 'Small', med: 'Medium',
-    lg: 'Large', huge: 'Huge', grg: 'Gargantuan'
-};
+import {
+    MODULE_ID,
+    SIZE_MAP,
+    SIZE_LABELS,
+    getEffectiveSize,
+} from './size-common.mjs';
+import { buildEncounterXpLevelLine } from './encounter-size-xp.mjs';
 
 // ─── Condition UUIDs (PF2e Remaster) ─────────────────────────────────────────
 
@@ -149,15 +146,6 @@ Hooks.once('init', () => {
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getEffectiveSize(actor) {
-    const rawSize = actor.size;
-    const isSmallPC = rawSize === 'sm' && actor.type === 'character';
-    const treatAsMedium = game.settings.get(MODULE_ID, 'treatSmallPCsAsMedium');
-
-    if (isSmallPC && treatAsMedium) return 'med';
-    return rawSize;
-}
 
 function getSizeDifferential(attackerSize, targetSize) {
     const atk = SIZE_MAP[attackerSize] ?? 2;
@@ -365,6 +353,8 @@ async function postSizeDifferentialMessage(attackerActor, targetActor, diff, out
         targetActor.uuid, reflexDC, conditionLabel, saveRollMode, autoRoll
     );
 
+    const encounterXpLine = buildEncounterXpLevelLine(attackerActor);
+
     const content = `
         <div class="pf2e chat-card action-card">
             <header class="card-header flexrow">
@@ -378,6 +368,7 @@ async function postSizeDifferentialMessage(attackerActor, targetActor, diff, out
                     <strong>${targetActor.name}</strong> <em>(${tgtSizeDisplay})</em>
                 </p>
                 <p>Size difference: <strong>${diff} categor${diff === 1 ? 'y' : 'ies'}</strong></p>
+                ${encounterXpLine}
                 <hr/>
                 <p>📌 Bonus damage: <strong>${displayDamage}</strong>${critNote}</p>
                 <p>📌 <strong>${targetActor.name}</strong> must succeed at

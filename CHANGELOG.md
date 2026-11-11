@@ -3,6 +3,11 @@
 All notable changes to PF2e Creature Size Matters are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.4.0]
+
+### Added
+- **Size-Adjusted Encounter Level** (world setting, default off): shifts effective creature level by size steps relative to a **Medium** reference for PF2e encounter XP, threat, and award display only (+1 per size above Medium, -1 per step below). Small player characters use the existing Treat Small PCs as Medium option when their size is evaluated. Hooks via **lib-wrapper** on `EncounterPF2e#analyze` (combat tracker metrics) and `game.pf2e.gm.calculateXP` (XP from Encounter macro when opposition tokens are selected). GMs see `Lv X → effective Y (Size)` on opposition combatants and on the size-differential chat card when the attacker qualifies. Players are unaffected.
+
 ## [1.3.5]
 
 ### Changed
