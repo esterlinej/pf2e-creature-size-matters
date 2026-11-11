@@ -26,10 +26,8 @@ const patchState = {
     vanillaCalculateXP: null,
 };
 
-const WRAPPER_IDS = {
-    analyze: `${MODULE_ID}.analyze`,
-    calculateXP: `${MODULE_ID}.calculateXP`,
-};
+/** lib-wrapper `package_id` must match module.json `id` exactly (not a suffixed wrapper name). */
+const LIBWRAPPER_PACKAGE_ID = MODULE_ID;
 
 let syncTimer;
 let metricsRefreshTimer;
@@ -264,30 +262,46 @@ function canInstallPatches() {
 function installLibWrapperPatches() {
     captureVanillaCalculateXP();
     const libWrapper = globalThis.libWrapper;
-    libWrapper.register(
-        WRAPPER_IDS.analyze,
-        'CONFIG.Combat.documentClass.prototype.analyze',
-        analyzeSizeWrapper,
-        'WRAPPER'
-    );
-    libWrapper.register(
-        WRAPPER_IDS.calculateXP,
-        'game.pf2e.gm.calculateXP',
-        calculateXpWrapper,
-        'WRAPPER'
-    );
-    patchState.viaLibWrapper = true;
+    if (!libWrapper || !LIBWRAPPER_PACKAGE_ID) {
+        return false;
+    }
+
+    try {
+        libWrapper.register(
+            LIBWRAPPER_PACKAGE_ID,
+            'CONFIG.Combat.documentClass.prototype.analyze',
+            analyzeSizeWrapper,
+            'WRAPPER'
+        );
+        libWrapper.register(
+            LIBWRAPPER_PACKAGE_ID,
+            'game.pf2e.gm.calculateXP',
+            calculateXpWrapper,
+            'WRAPPER'
+        );
+        patchState.viaLibWrapper = true;
+        return true;
+    } catch (err) {
+        console.warn(`${MODULE_ID} | libWrapper register failed; using plain patches`, err);
+        try {
+            libWrapper.unregister(LIBWRAPPER_PACKAGE_ID);
+        } catch (unregisterErr) {
+            console.warn(`${MODULE_ID} | libWrapper unregister after failed register`, unregisterErr);
+        }
+        patchState.viaLibWrapper = false;
+        return false;
+    }
 }
 
 function removeLibWrapperPatches() {
     const libWrapper = globalThis.libWrapper;
     if (!libWrapper) return;
     try {
-        libWrapper.unregister(WRAPPER_IDS.analyze);
-        libWrapper.unregister(WRAPPER_IDS.calculateXP);
+        libWrapper.unregister(LIBWRAPPER_PACKAGE_ID);
     } catch (err) {
         console.warn(`${MODULE_ID} | libWrapper unregister`, err);
     }
+    patchState.viaLibWrapper = false;
 }
 
 function installPlainPatches() {
@@ -331,11 +345,12 @@ function maybeNotifyLibWrapperRecommendation() {
 function installEncounterXpPatches() {
     if (patchState.active || !canInstallPatches()) return;
 
-    if (globalThis.libWrapper) {
-        installLibWrapperPatches();
-    } else {
+    const usedLibWrapper = globalThis.libWrapper && installLibWrapperPatches();
+    if (!usedLibWrapper) {
         installPlainPatches();
-        maybeNotifyLibWrapperRecommendation();
+        if (!globalThis.libWrapper) {
+            maybeNotifyLibWrapperRecommendation();
+        }
     }
 
     patchState.active = true;

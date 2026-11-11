@@ -296,6 +296,12 @@ This never changes the creature's real level, stats, or actor sheet — only PF2
 
 Players do not see adjusted levels unless you expose the combat tracker to them; the feature is intended for GMs.
 
+### Other modules (PF2e HUD, XP Budget tools, etc.)
+
+PF2e core shows **Threat** and **Award** in one `.metrics` row (pop-out and docked core tracker match). Some modules add their own budget UI in the sidebar — for example **PF2e HUD** tooltips or **PF2E XP Budget** — that may show separate “Moderate” / “XP BUD.” labels using `actor.level` or their own math. This module patches **`EncounterPF2e#analyze`** (combat `metrics`) and **`game.pf2e.gm.calculateXP`** (macro/API). Widgets that ignore those and read raw actor levels will **not** pick up size adjustment until their authors align with the same APIs.
+
+**PF2e opposition rule:** only combatants whose actors have **`alliance: opposition`** (plus hazards) count toward encounter XP. Party PCs are `alliance: party`. NPCs left on `neutral` are not in the opposition budget — set hostile/opposition alliance if they should count.
+
 ---
 
 ## Design Notes
