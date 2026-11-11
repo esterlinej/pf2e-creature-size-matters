@@ -265,6 +265,37 @@ If **Auto Apply Bonus Damage** is **Auto Apply**, damage is applied when the car
 
 ---
 
+## Size-Adjusted Encounter Level (XP & threat)
+
+**Setting:** **Size-Adjusted Encounter Level** (world, default **off**). Requires the **[lib-wrapper](https://foundryvtt.com/packages/lib-wrapper)** module.
+
+When enabled, each creature's **encounter budget level** shifts by size relative to a fixed **Medium** reference — not the party's current size and not a “most common PC size” rule:
+
+| Size (creature) | Shift to encounter level |
+|-----------------|--------------------------|
+| Tiny | −2 |
+| Small | −1 |
+| Medium | 0 |
+| Large | +1 |
+| Huge | +2 |
+| Gargantuan | +3 |
+
+**Small player characters** use the same **[Treat Small Player Characters as Medium](#treat-small-player-characters-as-medium)** setting: when that option is on, a Small PC counts as Medium (0 shift) for this feature as well. Small **NPCs** always use their real size (−1 for Small).
+
+This never changes the creature's real level, stats, or actor sheet — only PF2e **encounter XP**, **threat rating**, and **award** math plus GM-facing labels.
+
+**Example:** A **Huge** creature at sheet level **4** counts as **effective level 6** for encounter XP/threat (Huge is two steps above Medium: 4 + 2 = 6). A GM might see `Lv 4 → effective 6 (Huge)` on the combat tracker or on the size-differential chat card for the attacker.
+
+**Where it applies**
+
+- **Combat tracker** header metrics (threat / XP budget / award) via a lib-wrapper on PF2e `EncounterPF2e#analyze`.
+- **XP from Encounter** macro when selected opposition tokens match the macro's level list (wrapper on `game.pf2e.gm.calculateXP`).
+- **Size-differential chat card** (GM): optional encounter-level line for the attacker when a shift applies.
+
+Players do not see adjusted levels unless you expose the combat tracker to them; the feature is intended for GMs.
+
+---
+
 ## Design Notes
 
 This module is intentionally **GM-facing** by default. The intent is to add narrative and tactical weight to size differentials without overwhelming players with additional mechanics they need to track. The GM sees the prompt, applies the damage, calls for the save, and narrates the result.
@@ -281,5 +312,7 @@ This module is intentionally **GM-facing** by default. The intent is to add narr
 | Differential looks wrong for a Small PC | If **Treat Small Player Characters as Medium** is on, the card shows `Small → Medium` for player characters only; NPCs/monsters use true size. |
 | Bonus damage resisted or reduced | Bonus damage bypasses IWR by design; if HP did not change, confirm the target UUID resolved and check the Foundry console for module warnings. |
 | Save not in player hands | Set **Save Roll Mode** to **Post to Chat** (recommended). **GM Rolls** and **Both** add server-side rolling the GM must trigger. |
+| Encounter XP unchanged with setting on | Confirm **lib-wrapper** is installed and active; reload the world after first enable. Add opposition to combat and check tracker metrics. |
+| Macro XP ignores size | Select **all opposition tokens** you include in the macro; adjusted levels apply only when token count matches the macro's opposition list. |
 
 For version compatibility, see the [README](../README.md#compatibility).

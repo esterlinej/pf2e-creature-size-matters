@@ -1,14 +1,15 @@
 {
-  "pf2e-size-differential": {
+  "pf2e-creature-size-matters": {
     "settings": {
-      "bonusPerSize": {
-        "name": "Bonus Damage Per Size Category",
-        "hint": "Flat damage bonus applied per size category difference"
-      },
-      "dcPerSize": {
-        "name": "Reflex DC Per Size Category",
-        "hint": "Added to base DC 10 per size category difference"
+      "sizeAdjustedEncounter": {
+        "name": "Size-Adjusted Encounter Level",
+        "hint": "When enabled, each size step above Medium adds +1 to a creature's effective level for encounter XP and threat only (Large +1, Huge +2, etc.); each step below Medium subtracts 1 (Small -1, Tiny -2). Reference size is always Medium. Small player characters count as Medium when Treat Small Player Characters as Medium is on. Does not change actor levels or stats. Requires the lib-wrapper module."
       }
+    },
+    "encounter": {
+      "effectiveLevel": "Lv {base} → effective {effective} ({size})",
+      "metricsReference": "XP/threat uses Medium as reference size.",
+      "chatCardPrefix": "Encounter XP level (attacker)"
     }
   }
 }
