@@ -31,6 +31,8 @@ const LIBWRAPPER_PACKAGE_ID = MODULE_ID;
 
 let syncTimer;
 let metricsRefreshTimer;
+/** Prevents re-entrant analyze when refreshAllEncounterMetrics sets encounter.metrics. */
+let analyzeInProgress = false;
 
 // ─── Settings ────────────────────────────────────────────────────────────────
 
@@ -113,7 +115,7 @@ function mergeAdjustedNpcLevels(npcLevels, oppositionActors) {
  * @param {EncounterPF2e} encounter
  */
 function computeEncounterMetrics(encounter) {
-    if (!game.ready) return null;
+    if (!game.ready || !game.pf2e?.gm) return null;
 
     const partyMembers = getPartyMembers();
     const fightyPartyMembers = (() => {
@@ -145,7 +147,7 @@ function computeEncounterMetrics(encounter) {
         }));
 
     const calculateXP = getVanillaCalculateXP();
-    const pwol = game.pf2e.settings.variants.pwol.enabled;
+    const pwol = Boolean(game.pf2e.settings?.variants?.pwol?.enabled);
     const result = calculateXP.call(
         game.pf2e.gm,
         partyLevel,
@@ -194,12 +196,27 @@ function computeEncounterMetrics(encounter) {
 }
 
 /**
+ * libWrapper WRAPPER: call `wrapped` exactly once on disable, fallback, or re-entry.
  * @this {EncounterPF2e}
- * @param {() => EncounterMetrics | null} wrapped
  */
-function analyzeSizeWrapper(wrapped) {
-    if (!isSizeEncounterXpEnabled()) return wrapped.call(this);
-    return computeEncounterMetrics(this);
+function analyzeSizeWrapper(wrapped, ...args) {
+    if (analyzeInProgress) {
+        return wrapped.apply(this, args);
+    }
+    try {
+        if (!isSizeEncounterXpEnabled()) {
+            return wrapped.apply(this, args);
+        }
+        analyzeInProgress = true;
+        const adjusted = computeEncounterMetrics(this);
+        if (adjusted !== null) return adjusted;
+        return wrapped.apply(this, args);
+    } catch (err) {
+        console.warn(`${MODULE_ID} | analyze wrapper failed; using vanilla analyze`, err);
+        return wrapped.apply(this, args);
+    } finally {
+        analyzeInProgress = false;
+    }
 }
 
 /** @param {number[]} npcLevels */
@@ -232,11 +249,16 @@ function adjustNpcLevelsForCalculateXP(npcLevels) {
 
 /** @param {typeof game.pf2e.gm.calculateXP} wrapped */
 function calculateXpWrapper(wrapped, partyLevel, partySize, npcLevels, hazards, dcOptions) {
-    if (!isSizeEncounterXpEnabled()) {
+    try {
+        if (!isSizeEncounterXpEnabled()) {
+            return wrapped(partyLevel, partySize, npcLevels, hazards, dcOptions);
+        }
+        const adjusted = adjustNpcLevelsForCalculateXP(npcLevels);
+        return wrapped(partyLevel, partySize, adjusted, hazards, dcOptions);
+    } catch (err) {
+        console.warn(`${MODULE_ID} | calculateXP wrapper failed; using vanilla`, err);
         return wrapped(partyLevel, partySize, npcLevels, hazards, dcOptions);
     }
-    const adjusted = adjustNpcLevelsForCalculateXP(npcLevels);
-    return wrapped(partyLevel, partySize, adjusted, hazards, dcOptions);
 }
 
 function getVanillaCalculateXP() {
@@ -310,8 +332,8 @@ function installPlainPatches() {
 
     const proto = CONFIG.Combat.documentClass.prototype;
     patchState.analyzeOriginal = proto.analyze;
-    proto.analyze = function sizeMattersAnalyzePatched() {
-        return analyzeSizeWrapper(patchState.analyzeOriginal.bind(this));
+    proto.analyze = function sizeMattersAnalyzePatched(...args) {
+        return analyzeSizeWrapper(patchState.analyzeOriginal.bind(this), ...args);
     };
 
     const original = patchState.vanillaCalculateXP;
@@ -377,7 +399,9 @@ function syncEncounterXpPatches() {
     } else {
         removeEncounterXpPatches();
     }
-    refreshAllEncounterMetrics();
+    if (game.ready) {
+        refreshAllEncounterMetrics();
+    }
 }
 
 function queueSyncEncounterXpPatches() {
@@ -386,9 +410,14 @@ function queueSyncEncounterXpPatches() {
 }
 
 function refreshAllEncounterMetrics() {
-    if (!game.user?.isGM) return;
-    for (const encounter of game.combats) {
-        encounter.metrics = encounter.analyze();
+    if (!game.ready || !game.user?.isGM) return;
+    try {
+        for (const encounter of game.combats) {
+            encounter.metrics = encounter.analyze();
+        }
+    } catch (err) {
+        console.warn(`${MODULE_ID} | refreshAllEncounterMetrics failed`, err);
+        return;
     }
     rerenderCombatTracker();
 }
@@ -460,42 +489,22 @@ function annotateCombatTrackerLevelDisplays(root) {
     }
 }
 
-function appendMetricsReferenceNote(root) {
-    if (!game.user.isGM || !isSizeEncounterXpEnabled()) return;
-
-    const scope = root instanceof HTMLElement ? root : document;
-    for (const metricsEl of scope.querySelectorAll('#combat .metrics, #combat-popout .metrics, section.metrics')) {
-        if (metricsEl.querySelector('.size-matters-metrics-note')) continue;
-        const note = document.createElement('div');
-        note.classList.add('size-matters-metrics-note');
-        note.style.fontSize = 'var(--font-size-12, 0.75rem)';
-        note.style.opacity = '0.9';
-        note.style.marginTop = '0.25rem';
-        note.style.flexBasis = '100%';
-        note.style.textAlign = 'center';
-        note.textContent = game.i18n.localize(`${MODULE_ID}.encounter.metricsReference`);
-        metricsEl.append(note);
-    }
-}
-
 function decorateEncounterTracker(app, element) {
     if (!game.user.isGM) return;
 
-    const root = element instanceof HTMLElement ? element : document;
+    const root = (element instanceof HTMLElement ? element : null)
+        ?? app?.element
+        ?? null;
+    if (!root) return;
+
     clearEncounterUiDecorations(root);
 
-    const tracker = root.querySelector?.('.directory-list')
-        ?? root.querySelector?.('ol.combat-tracker')
-        ?? root.querySelector?.('[data-application-part="tracker"]')
+    const tracker = root.querySelector('.directory-list')
+        ?? root.querySelector('ol.combat-tracker')
+        ?? root.querySelector('[data-application-part="tracker"]')
         ?? root;
 
     annotateCombatTrackerLevelDisplays(tracker);
-    appendMetricsReferenceNote(root);
-}
-
-function onCombatTrackerRender(_app, html) {
-    const root = html instanceof HTMLElement ? html : html?.[0] ?? html;
-    decorateEncounterTracker(_app, root ?? document);
 }
 
 Hooks.once('pf2e.systemReady', () => {
@@ -523,8 +532,6 @@ Hooks.on('updateActor', (actor, changes) => {
         queueMetricsRefresh();
     }
 });
-
-Hooks.on('renderCombatTracker', onCombatTrackerRender);
 
 Hooks.on('renderApplication', (app, element) => {
     if (app?.constructor?.name !== 'EncounterTracker') return;
