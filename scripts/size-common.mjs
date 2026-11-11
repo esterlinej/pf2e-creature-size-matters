@@ -128,7 +128,7 @@ export function getEncounterBudgetLevel(actor, referenceStep) {
 }
 
 /**
- * GM-facing label, e.g. "Lv 11 → effective 12 (Large; party ref. Medium)".
+ * GM-facing tooltip, e.g. "Lv 11 → effective 12 (Large; party ref. Medium)".
  * @param {ActorPF2e} actor
  * @param {number} [referenceStep]
  */
@@ -146,4 +146,12 @@ export function formatEncounterEffectiveLevel(actor, referenceStep) {
         size: sizeLabel,
         reference: categoryToSizeLabel(ref)
     });
+}
+
+/** Combat tracker badge text, e.g. "CSM: 13". */
+export function formatEncounterTrackerMarker(budgetLevel) {
+    if (globalThis.game?.i18n) {
+        return game.i18n.format(`${MODULE_ID}.encounter.trackerMarker`, { level: budgetLevel });
+    }
+    return `CSM: ${budgetLevel}`;
 }

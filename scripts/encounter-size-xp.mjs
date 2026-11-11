@@ -7,6 +7,7 @@ import {
     getEncounterBudgetLevel,
     getSizeLevelShift,
     formatEncounterEffectiveLevel,
+    formatEncounterTrackerMarker,
     isSizeEncounterXpEnabled,
     getPartyActorMembers,
     resolveEncounterReferenceStep,
@@ -261,6 +262,7 @@ function syncEncounterXpPatches() {
         installEncounterXpPatches();
     } else {
         removeEncounterXpPatches();
+        if (game.ready) clearAllEncounterMarkers();
     }
     if (game.ready) {
         queueMetricsRefresh();
@@ -297,10 +299,62 @@ function rerenderCombatTracker() {
 
 // ─── Combat tracker UI (GM only) ─────────────────────────────────────────────
 
-function clearEncounterUiDecorations(root = document) {
-    for (const el of root.querySelectorAll('.size-matters-encounter-level, .size-matters-metrics-note')) {
+function clearAllEncounterMarkers() {
+    for (const el of document.querySelectorAll('.size-matters-encounter-level, .size-matters-metrics-note')) {
         el.remove();
     }
+}
+
+function isEncounterOrCombatTrackerApp(app) {
+    const name = app?.constructor?.name ?? '';
+    return name === 'EncounterTracker' || name === 'CombatTracker';
+}
+
+/**
+ * @param {HTMLElement} element
+ */
+function resolveCombatTrackerListRoot(element) {
+    if (!(element instanceof HTMLElement)) return null;
+    if (element.matches('li.combatant[data-combatant-id]')) {
+        return element.closest('ol.combat-tracker, .directory-list, [data-application-part="tracker"]');
+    }
+    return element.querySelector('[data-application-part="tracker"]')
+        ?? element.querySelector('ol.combat-tracker')
+        ?? element.querySelector('.directory-list')
+        ?? (element.querySelector('li.combatant[data-combatant-id]') ? element : null);
+}
+
+function scheduleCombatTrackerDecoration(element) {
+    requestAnimationFrame(() => {
+        const tracker = resolveCombatTrackerListRoot(element);
+        if (tracker) annotateCombatTrackerLevelDisplays(tracker);
+    });
+}
+
+/**
+ * @param {ApplicationV2 | Application} app
+ * @param {HTMLElement} element
+ * @param {{ part?: string }} [context]
+ */
+function onCombatTrackerRendered(app, element, context = {}) {
+    if (!game.user?.isGM || !isSizeEncounterXpEnabled()) return;
+    if (!isEncounterOrCombatTrackerApp(app)) return;
+    if (context.part && context.part !== 'tracker') return;
+    scheduleCombatTrackerDecoration(element);
+}
+
+/** @param {string} combatantId */
+function getCombatantByRowId(encounter, combatantId) {
+    const collection = encounter?.combatants;
+    if (!collection || !combatantId) return null;
+    if (typeof collection.get === 'function') {
+        const direct = collection.get(combatantId);
+        if (direct) return direct;
+    }
+    for (const combatant of collection) {
+        if (combatant.id === combatantId) return combatant;
+    }
+    return null;
 }
 
 /** @param {ActorPF2e} actor */
@@ -318,12 +372,14 @@ function annotateCombatTrackerLevelDisplays(root) {
     if (!encounter) return;
 
     for (const row of root.querySelectorAll('li.combatant[data-combatant-id]')) {
-        const combatant = encounter.combatants.get(row.dataset.combatantId);
+        const combatant = getCombatantByRowId(encounter, row.dataset.combatantId);
         const actor = combatant?.actor;
         if (!shouldAnnotateOpposition(actor)) continue;
 
         const note = formatEncounterEffectiveLevel(actor);
         if (!note) continue;
+
+        const marker = ` ${formatEncounterTrackerMarker(getEncounterBudgetLevel(actor))}`;
 
         const levelEl = row.querySelector('.actor-level')
             ?? row.querySelector('.combatant-level')
@@ -334,7 +390,7 @@ function annotateCombatTrackerLevelDisplays(root) {
             const span = document.createElement('span');
             span.classList.add('size-matters-encounter-level');
             span.dataset.tooltip = note;
-            span.textContent = ` → eff. ${getEncounterBudgetLevel(actor)}`;
+            span.textContent = marker;
             span.style.opacity = '0.85';
             span.style.fontSize = 'var(--font-size-12, 0.75rem)';
             levelEl.appendChild(span);
@@ -349,29 +405,11 @@ function annotateCombatTrackerLevelDisplays(root) {
         const badge = document.createElement('span');
         badge.classList.add('size-matters-encounter-level');
         badge.dataset.tooltip = note;
-        badge.textContent = ` [eff. ${getEncounterBudgetLevel(actor)}]`;
+        badge.textContent = marker;
         badge.style.fontSize = 'var(--font-size-11, 0.7rem)';
         badge.style.opacity = '0.9';
         nameAnchor.appendChild(badge);
     }
-}
-
-function decorateEncounterTracker(app, element) {
-    if (!game.user.isGM) return;
-
-    const root = (element instanceof HTMLElement ? element : null)
-        ?? app?.element
-        ?? null;
-    if (!root) return;
-
-    clearEncounterUiDecorations(root);
-
-    const tracker = root.querySelector('.directory-list')
-        ?? root.querySelector('ol.combat-tracker')
-        ?? root.querySelector('[data-application-part="tracker"]')
-        ?? root;
-
-    annotateCombatTrackerLevelDisplays(tracker);
 }
 
 Hooks.once('pf2e.systemReady', () => {
@@ -400,9 +438,12 @@ Hooks.on('updateActor', (actor, changes) => {
     }
 });
 
-Hooks.on('renderApplication', (app, element) => {
-    if (app?.constructor?.name !== 'EncounterTracker') return;
-    requestAnimationFrame(() => decorateEncounterTracker(app, element));
+Hooks.on('renderEncounterTracker', onCombatTrackerRendered);
+Hooks.on('renderCombatTracker', onCombatTrackerRendered);
+Hooks.on('renderApplicationV2', onCombatTrackerRendered);
+Hooks.on('renderApplication', (app, html) => {
+    const element = html instanceof HTMLElement ? html : html?.[0] ?? html;
+    onCombatTrackerRendered(app, element, {});
 });
 
 // ─── Chat card encounter level line (exported for size-differential) ───────────

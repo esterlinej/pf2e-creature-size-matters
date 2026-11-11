@@ -9,7 +9,7 @@ A Foundry VTT module for **Pathfinder 2e** that adds meaningful mechanical weigh
 - Configurable damage tiers, save DC, conditions, automation, and critical doubling
 - **Post to Chat** Reflex checks so players roll their own saves with full bonuses
 - Optional **Treat Small Player Characters as Medium** so ancestry size does not penalize PCs
-- Optional **size-adjusted encounter level** (vs party average size) for GM encounter XP and threat — does not change actor stats
+- Optional **size-adjusted encounter level** (vs party average size) for GM encounter XP and threat — does not change actor stats; opposition rows show **`CSM: N`** in the combat tracker (tooltip shows full effective-level detail)
 
 ## Install
 
