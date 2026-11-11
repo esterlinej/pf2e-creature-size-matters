@@ -8,7 +8,6 @@
     },
     "encounter": {
       "effectiveLevel": "Lv {base} → effective {effective} ({size})",
-      "metricsReference": "XP/threat uses Medium as reference size.",
       "chatCardPrefix": "Encounter XP level (attacker)",
       "libWrapperRecommended": "Size-Adjusted Encounter Level is active without lib-wrapper. It works, but installing lib-wrapper is recommended for better compatibility with other modules."
     }
