@@ -8,6 +8,13 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 - **Size-Adjusted Encounter Level** (world setting, default off): shifts effective creature level by size steps relative to a **Medium** reference for PF2e encounter XP, threat, and award display only (+1 per size above Medium, -1 per step below). Small player characters use the existing Treat Small PCs as Medium option when their size is evaluated. Patches apply only while the setting is enabled (`EncounterPF2e#analyze` and `game.pf2e.gm.calculateXP`); uses **lib-wrapper** when present, otherwise a built-in fallback. **lib-wrapper** is recommended, not required. GMs see `Lv X → effective Y (Size)` on opposition combatants and on the size-differential chat card when the attacker qualifies. Players are unaffected.
 
+### Fixed (post-PR testing)
+- Encounter metrics now use a single vanilla `calculateXP` pass (avoids double-adjustment when the macro wrapper was chained inside `analyze`).
+- Combat tracker re-renders fully when toggling the setting; size-annotation DOM is cleared each render; Medium-reference note only while enabled.
+- Setting config uses explicit labels (checkbox reflects stored world value).
+- Opposition annotations require PF2e `alliance: opposition` (same as core `analyze`).
+- Replaced “re-analyze then patch snapshot” with a full `computeEncounterMetrics()` that mirrors PF2e `EncounterPF2e#analyze` (party/opposition from combatants) so threat, budget, and award always match one `calculateXP` call.
+
 ## [1.3.5]
 
 ### Changed
